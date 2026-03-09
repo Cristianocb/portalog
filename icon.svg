@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512">
+  <rect width="512" height="512" rx="100" fill="#0d0f14"/>
+  <rect x="30" y="30" width="452" height="452" rx="80" fill="#14171f"/>
+  <!-- Box body -->
+  <rect x="120" y="210" width="272" height="210" rx="16" fill="#1c2030" stroke="#4f8cff" stroke-width="8"/>
+  <!-- Box top flap left -->
+  <path d="M120 210 L180 140 L256 140 L256 210 Z" fill="#252a3a" stroke="#4f8cff" stroke-width="8" stroke-linejoin="round"/>
+  <!-- Box top flap right -->
+  <path d="M392 210 L332 140 L256 140 L256 210 Z" fill="#1c2030" stroke="#4f8cff" stroke-width="8" stroke-linejoin="round"/>
+  <!-- Tape stripe -->
+  <rect x="232" y="210" width="48" height="210" rx="0" fill="#4f8cff" opacity="0.25"/>
+  <rect x="232" y="140" width="48" height="70" rx="0" fill="#4f8cff" opacity="0.25"/>
+  <!-- Checkmark -->
+  <circle cx="355" cy="340" r="52" fill="#0d0f14"/>
+  <circle cx="355" cy="340" r="44" fill="#2de8b0"/>
+  <polyline points="333,340 350,357 380,322" fill="none" stroke="#0d0f14" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
