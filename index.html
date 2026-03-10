@@ -1438,6 +1438,7 @@ function openDetail(id) {
     deliveryBtn.textContent = '✅ Confirmar Retirada';
     deliveryBtn.disabled = false;
     deliveryBtn.style.opacity = '1';
+    deliveryBtn.style.pointerEvents = 'auto';
   } else {
     deliverySection.style.display = 'none';
   }
@@ -1450,25 +1451,18 @@ function closeModal() {
   currentPackageId = null;
 }
 
-let _confirmingDelivery = false;
-async function confirmDelivery() {
-  if (_confirmingDelivery) return;
+function confirmDelivery() {
   const name = document.getElementById('withdrawName').value.trim();
   if (!name) { showToast('⚠️ Informe o nome de quem retirou', 'error'); return; }
-  _confirmingDelivery = true;
   const pkgId = currentPackageId;
-  // Fecha o modal IMEDIATAMENTE - não espera o Firebase
   closeModal();
   showToast('✅ Retirada registrada para ' + name);
-  // Salva em background
   packagesCol.doc(pkgId).update({
     status: 'Entregue',
     withdrawnBy: name,
     withdrawalDate: new Date().toISOString(),
   }).catch(e => {
     showToast('❌ Erro ao salvar. Verifique a conexão.', 'error');
-  }).finally(() => {
-    _confirmingDelivery = false;
   });
 }
 
@@ -1696,25 +1690,18 @@ function openCopiesDetail(id) {
   }
 }
 
-let _confirmingCopies = false;
-async function confirmCopiesDelivery() {
-  if (_confirmingCopies) return;
+function confirmCopiesDelivery() {
   const name = document.getElementById('withdrawName').value.trim();
   if (!name) { showToast('⚠️ Informe o nome do aluno', 'error'); return; }
-  _confirmingCopies = true;
   const pkgId = currentPackageId;
-  // Fecha o modal IMEDIATAMENTE
   closeModal();
   showToast('✅ ' + name + ' retirou a encomenda!');
-  // Salva em background
   packagesCol.doc(pkgId).update({
     status: 'Entregue em Cópias',
     deliveredInCopiesBy: name,
     deliveredInCopiesDate: new Date().toISOString()
   }).catch(e => {
     showToast('❌ Erro ao salvar: ' + e.message, 'error');
-  }).finally(() => {
-    _confirmingCopies = false;
   });
 }
 
