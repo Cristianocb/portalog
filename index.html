@@ -12,983 +12,951 @@
 <meta name="theme-color" content="#0d0f14">
 <link rel="manifest" href="/manifest.json">
 <link rel="apple-touch-icon" href="/icon-192.png">
-<link
-href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+
-Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script
-src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
 <style>
-:root {
---bg: #0d0f14;
---surface: #14171f;
---surface2: #1c2030;
---surface3: #252a3a;
---border: #2a2f42;
---accent: #4f8cff;
---accent2: #2de8b0;
---accent3: #ff6b6b;
---accent4: #ffd166;
---text: #e8ecf5;
---text2: #8b92a8;
---text3: #555e78;
---radius: 14px;
---radius-sm: 8px;
---shadow: 0 4px 32px rgba(0,0,0,0.5);
---shadow-lg: 0 8px 64px rgba(0,0,0,0.6);
-}
-*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-body {
-font-family: 'DM Sans', sans-serif;
-background: var(--bg);
-color: var(--text);
-min-height: 100vh;
-overflow-x: hidden;
-}
-/* Background texture */
-body::before {
-content: '';
-position: fixed;
-inset: 0;
-background:
-radial-gradient(ellipse 60% 40% at 20% 10%, rgba(79,140,255,0.07) 0%, transparent
-60%),
-radial-gradient(ellipse 50% 40% at 80% 80%, rgba(45,232,176,0.05) 0%, transparent
-60%);
-pointer-events: none;
-z-index: 0;
-}
-/* LAYOUT */
-.app { position: relative; z-index: 1; display: flex; flex-direction: column; min-height: 100vh;
-max-width: 480px; margin: 0 auto; }
-/* HEADER */
-.header {
-padding: 20px 20px 0;
-display: flex;
-align-items: center;
-justify-content: space-between;
-}
-.logo {
-font-family: 'Syne', sans-serif;
-font-weight: 800;
-font-size: 22px;
-letter-spacing: -0.5px;
-background: linear-gradient(135deg, var(--accent), var(--accent2));
--webkit-background-clip: text;
--webkit-text-fill-color: transparent;
-background-clip: text;
-}
-.logo span { font-weight: 400; opacity: 0.6; }
-.header-badge {
-background: var(--surface2);
-border: 1px solid var(--border);
-border-radius: 20px;
-padding: 6px 12px;
-font-size: 12px;
-color: var(--text2);
-font-weight: 500;
-display: flex;
-align-items: center;
-gap: 6px;
-}
-.header-badge .dot {
-width: 7px; height: 7px;
-border-radius: 50%;
-background: var(--accent2);
-box-shadow: 0 0 6px var(--accent2);
-animation: pulse 2s ease-in-out infinite;
-}
-@keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
-/* NAV */
-.nav {
-position: sticky;
-top: 0;
-z-index: 100;
-padding: 16px 20px;
-display: flex;
-gap: 8px;
-background: linear-gradient(to bottom, var(--bg) 70%, transparent);
-}
-.nav-btn {
-flex: 1;
-padding: 10px 6px;
-border-radius: var(--radius-sm);
-border: 1px solid var(--border);
-background: var(--surface);
-color: var(--text2);
-font-family: 'DM Sans', sans-serif;
-font-size: 11.5px;
-font-weight: 500;
-cursor: pointer;
-transition: all 0.2s;
-display: flex;
-flex-direction: column;
-align-items: center;
-gap: 4px;
-}
-.nav-btn .nav-icon { font-size: 18px; }
-.nav-btn:hover { border-color: var(--accent); color: var(--accent); }
-.nav-btn.active {
-background: linear-gradient(135deg, rgba(79,140,255,0.2), rgba(45,232,176,0.1));
-border-color: var(--accent);
-color: var(--accent);
-box-shadow: 0 0 0 1px rgba(79,140,255,0.2);
-}
-/* CONTENT */
-.content { flex: 1; padding: 0 20px 100px; }
-.screen { display: none; animation: fadeIn 0.3s ease; }
-.screen.active { display: block; }
-@keyframes fadeIn { from{opacity:0;transform:translateY(8px)}
-to{opacity:1;transform:none} }
-/* SECTION TITLE */
-.section-title {
-font-family: 'Syne', sans-serif;
-font-size: 22px;
-font-weight: 700;
-margin-bottom: 4px;
-letter-spacing: -0.3px;
-}
-.section-sub {
-color: var(--text2);
-font-size: 13px;
-margin-bottom: 20px;
-}
-/* STATS ROW */
-.stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
-.stat-card {
-background: var(--surface);
-border: 1px solid var(--border);
-border-radius: var(--radius);
-padding: 16px;
-display: flex;
-flex-direction: column;
-gap: 4px;
-}
-.stat-num {
-font-family: 'Syne', sans-serif;
-font-size: 28px;
-font-weight: 800;
-line-height: 1;
-}
-.stat-label { font-size: 12px; color: var(--text2); }
-.stat-card.accent { background: linear-gradient(135deg, rgba(79,140,255,0.12),
-rgba(79,140,255,0.04)); border-color: rgba(79,140,255,0.3); }
-.stat-card.accent .stat-num { color: var(--accent); }
-.stat-card.green { background: linear-gradient(135deg, rgba(45,232,176,0.1),
-rgba(45,232,176,0.03)); border-color: rgba(45,232,176,0.25); }
-.stat-card.green .stat-num { color: var(--accent2); }
-/* FORM */
-.card {
-background: var(--surface);
-border: 1px solid var(--border);
-border-radius: var(--radius);
-padding: 20px;
-margin-bottom: 14px;
-}
-.card-title {
-font-family: 'Syne', sans-serif;
-font-size: 13px;
-font-weight: 700;
-text-transform: uppercase;
-letter-spacing: 0.8px;
-color: var(--text2);
-margin-bottom: 16px;
-display: flex;
-align-items: center;
-gap: 8px;
-}
-.card-title::before {
-content: '';
-display: block;
-width: 3px;
-height: 14px;
-border-radius: 2px;
-background: var(--accent);
-}
-.field { margin-bottom: 14px; }
-.field:last-child { margin-bottom: 0; }
-label {
-display: block;
-font-size: 12px;
-font-weight: 500;
-color: var(--text2);
-margin-bottom: 6px;
-text-transform: uppercase;
-letter-spacing: 0.5px;
-}
-input, select, textarea {
-width: 100%;
-background: var(--surface2);
-border: 1px solid var(--border);
-border-radius: var(--radius-sm);
-padding: 11px 14px;
-color: var(--text);
-font-family: 'DM Sans', sans-serif;
-font-size: 14px;
-outline: none;
-transition: border-color 0.2s, box-shadow 0.2s;
-}
-input:focus, select:focus, textarea:focus {
-border-color: var(--accent);
-box-shadow: 0 0 0 3px rgba(79,140,255,0.12);
-}
-select option { background: var(--surface2); }
-.input-row { display: flex; gap: 8px; align-items: flex-end; }
-.input-row input { flex: 1; }
-.scan-btn {
-background: var(--surface2);
-border: 1px solid var(--border);
-border-radius: var(--radius-sm);
-padding: 11px 14px;
-color: var(--accent);
-cursor: pointer;
-font-size: 18px;
-transition: all 0.2s;
-white-space: nowrap;
-display: flex;
-align-items: center;
-gap: 6px;
-font-family: 'DM Sans', sans-serif;
-font-size: 13px;
-font-weight: 500;
-}
-.scan-btn:hover { border-color: var(--accent); background: rgba(79,140,255,0.08); }
-/* PHOTO AREA */
-.photo-area {
-background: var(--surface2);
-border: 2px dashed var(--border);
-border-radius: var(--radius);
-min-height: 160px;
-display: flex;
-flex-direction: column;
-align-items: center;
-justify-content: center;
-cursor: pointer;
-transition: all 0.2s;
-position: relative;
-overflow: hidden;
-}
-.photo-area:hover { border-color: var(--accent); }
-.photo-area.has-photo { border-style: solid; border-color: var(--accent); }
-.photo-area img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
-border-radius: 10px; }
-.photo-placeholder { text-align: center; color: var(--text3); z-index: 1; }
-.photo-placeholder .icon { font-size: 32px; margin-bottom: 8px; }
-.photo-placeholder p { font-size: 13px; }
-.photo-placeholder small { font-size: 11px; color: var(--text3); }
-.photo-overlay {
-position: absolute;
-bottom: 10px; right: 10px;
-background: rgba(0,0,0,0.7);
-border-radius: 6px;
-padding: 4px 8px;
-font-size: 11px;
-color: #fff;
-z-index: 2;
-backdrop-filter: blur(4px);
-}
-input[type="file"] { display: none; }
-/* BUTTONS */
-.btn {
-width: 100%;
-padding: 14px;
-border-radius: var(--radius);
-border: none;
-font-family: 'Syne', sans-serif;
-font-size: 15px;
-font-weight: 700;
-cursor: pointer;
-transition: all 0.2s;
-display: flex;
-align-items: center;
-justify-content: center;
-gap: 8px;
-}
-.btn-primary {
-background: linear-gradient(135deg, var(--accent), #3a6fe8);
-color: #fff;
-box-shadow: 0 4px 20px rgba(79,140,255,0.3);
-}
-.btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 28px
-rgba(79,140,255,0.4); }
-.btn-primary:active { transform: none; }
-.btn-success {
-background: linear-gradient(135deg, var(--accent2), #22c49a);
-color: var(--bg);
-box-shadow: 0 4px 20px rgba(45,232,176,0.25);
-}
-.btn-success:hover { transform: translateY(-1px); }
-.btn-danger {
-background: rgba(255,107,107,0.12);
-color: var(--accent3);
-border: 1px solid rgba(255,107,107,0.3);
-font-size: 13px;
-padding: 10px;
-}
-.btn-sm {
-width: auto;
-padding: 8px 14px;
-font-size: 12px;
-border-radius: var(--radius-sm);
-}
-/* SEARCH */
-.search-row {
-display: flex;
-gap: 8px;
-margin-bottom: 16px;
-}
-.search-wrap { position: relative; flex: 1; }
-.search-wrap input { padding-left: 38px; }
-.search-icon {
-position: absolute;
-left: 12px;
-top: 50%;
-transform: translateY(-50%);
-color: var(--text3);
-font-size: 15px;
-pointer-events: none;
-}
-/* PACKAGE LIST */
-.pkg-list { display: flex; flex-direction: column; gap: 10px; }
-.pkg-card {
-background: var(--surface);
-border: 1px solid var(--border);
-border-radius: var(--radius);
-padding: 14px;
-display: flex;
-gap: 12px;
-cursor: pointer;
-transition: all 0.2s;
-position: relative;
-overflow: hidden;
-}
-.pkg-card::before {
-content: '';
-position: absolute;
-left: 0; top: 0; bottom: 0;
-width: 3px;
-background: var(--accent);
-border-radius: 3px 0 0 3px;
-}
-.pkg-card.delivered::before { background: var(--accent2); }
-.pkg-card:hover { border-color: var(--accent); transform: translateX(2px); }
-.pkg-thumb {
-width: 52px;
-height: 52px;
-border-radius: var(--radius-sm);
-background: var(--surface2);
-object-fit: cover;
-flex-shrink: 0;
-display: flex;
-align-items: center;
-justify-content: center;
-color: var(--text3);
-font-size: 22px;
-border: 1px solid var(--border);
-}
-.pkg-thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; }
-.pkg-info { flex: 1; min-width: 0; }
-.pkg-name {
-font-family: 'Syne', sans-serif;
-font-size: 15px;
-font-weight: 700;
-white-space: nowrap;
-overflow: hidden;
-text-overflow: ellipsis;
-}
-.pkg-meta { font-size: 12px; color: var(--text2); margin-top: 2px; display: flex; gap: 8px;
-flex-wrap: wrap; }
-.pkg-track { font-size: 11px; color: var(--text3); margin-top: 4px; font-family: monospace; }
-.pkg-badges { display: flex; gap: 6px; margin-top: 6px; align-items: center; }
-/* BADGES */
-.badge {
-display: inline-flex;
-align-items: center;
-padding: 3px 8px;
-border-radius: 20px;
-font-size: 10px;
-font-weight: 600;
-text-transform: uppercase;
-letter-spacing: 0.4px;
-gap: 4px;
-}
-.badge-stock { background: rgba(79,140,255,0.15); color: var(--accent); border: 1px solid
-rgba(79,140,255,0.25); }
-.badge-delivered { background: rgba(45,232,176,0.12); color: var(--accent2); border: 1px
-solid rgba(45,232,176,0.2); }
-.badge-carrier {
-background: var(--surface3);
-color: var(--text2);
-border: 1px solid var(--border);
-}
-/* CARRIER COLORS */
-.carrier-correios { background: rgba(255,209,102,0.12); color: var(--accent4); border-color:
-rgba(255,209,102,0.2); }
-.carrier-mercadolivre { background: rgba(255,230,0,0.1); color: #ffe600; border-color:
-rgba(255,230,0,0.2); }
-.carrier-shopee { background: rgba(255,120,66,0.12); color: #ff7842; border-color:
-rgba(255,120,66,0.2); }
-.carrier-jadlog { background: rgba(150,100,255,0.12); color: #c07aff; border-color:
-rgba(150,100,255,0.2); }
-.carrier-amazon { background: rgba(255,153,0,0.1); color: #ff9900; border-color:
-rgba(255,153,0,0.2); }
-/* EMPTY STATE */
-.empty {
-text-align: center;
-padding: 48px 24px;
-color: var(--text3);
-}
-.empty-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
-.empty h3 { font-size: 16px; color: var(--text2); margin-bottom: 6px; font-family: 'Syne',
-sans-serif; }
-/* MODAL */
-.modal-overlay {
-display: none;
-position: fixed;
-inset: 0;
-background: rgba(0,0,0,0.75);
-backdrop-filter: blur(4px);
-z-index: 200;
-align-items: flex-end;
-justify-content: center;
-}
-.modal-overlay.open { display: flex; animation: fadeIn 0.2s ease; }
-.modal {
-background: var(--surface);
-border: 1px solid var(--border);
-border-radius: 20px 20px 0 0;
-width: 100%;
-max-width: 480px;
-max-height: 92vh;
-overflow-y: auto;
-padding: 24px 20px 32px;
-animation: slideUp 0.3s cubic-bezier(0.34,1.56,0.64,1);
-}
-@keyframes slideUp { from{transform:translateY(100%)} to{transform:none} }
-.modal-handle {
-width: 40px; height: 4px;
-background: var(--border);
-border-radius: 2px;
-margin: -8px auto 20px;
-}
-.modal-title {
-font-family: 'Syne', sans-serif;
-font-size: 20px;
-font-weight: 700;
-margin-bottom: 6px;
-}
-.modal-sub { font-size: 13px; color: var(--text2); margin-bottom: 20px; }
-/* DETAIL VIEW */
-.detail-photo {
-width: 100%;
-height: 200px;
-border-radius: var(--radius);
-background: var(--surface2);
-object-fit: cover;
-margin-bottom: 16px;
-border: 1px solid var(--border);
-display: flex;
-align-items: center;
-justify-content: center;
-color: var(--text3);
-font-size: 40px;
-}
-.detail-photo img { width: 100%; height: 100%; object-fit: cover; border-radius: var(--radius);
-}
-.detail-row { display: flex; justify-content: space-between; align-items: flex-start; padding:
-10px 0; border-bottom: 1px solid var(--border); }
-.detail-row:last-of-type { border-bottom: none; }
-.detail-key { font-size: 12px; color: var(--text2); text-transform: uppercase; letter-spacing:
-0.4px; font-weight: 500; }
-.detail-val { font-size: 14px; font-weight: 500; text-align: right; max-width: 60%; }
-/* TOAST */
-.toast {
-position: fixed;
-bottom: 90px;
-left: 50%;
-transform: translateX(-50%) translateY(20px);
-background: var(--surface3);
-border: 1px solid var(--border);
-border-radius: var(--radius);
-padding: 12px 20px;
-font-size: 14px;
-font-weight: 500;
-opacity: 0;
-transition: all 0.3s;
-z-index: 300;
-white-space: nowrap;
-max-width: calc(100vw - 40px);
-text-align: center;
-}
-.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-.toast.success { border-color: rgba(45,232,176,0.4); color: var(--accent2); }
-.toast.error { border-color: rgba(255,107,107,0.4); color: var(--accent3); }
-/* FILTER ROW */
-.filter-row { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
-.filter-chip {
-padding: 6px 14px;
-border-radius: 20px;
-border: 1px solid var(--border);
-background: var(--surface);
-color: var(--text2);
-font-size: 12px;
-font-weight: 500;
-cursor: pointer;
-transition: all 0.2s;
-}
-.filter-chip.active {
-background: rgba(79,140,255,0.15);
-border-color: var(--accent);
-color: var(--accent);
-}
-/* SCROLLBAR */
-::-webkit-scrollbar { width: 4px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-/* DATE DISPLAY */
-.datetime-display {
-background: var(--surface2);
-border: 1px solid var(--border);
-border-radius: var(--radius-sm);
-padding: 11px 14px;
-font-size: 14px;
-color: var(--text2);
-display: flex;
-align-items: center;
-gap: 8px;
-}
-.datetime-display .icon { color: var(--accent); }
-/* CARRIER GRID */
-.carrier-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-.carrier-opt {
-background: var(--surface2);
-border: 1px solid var(--border);
-border-radius: var(--radius-sm);
-padding: 10px 8px;
-text-align: center;
-cursor: pointer;
-font-size: 12px;
-font-weight: 500;
-transition: all 0.2s;
-color: var(--text2);
-}
-.carrier-opt .c-icon { font-size: 20px; margin-bottom: 4px; display: block; }
-.carrier-opt.selected { border-color: var(--accent); background: rgba(79,140,255,0.12);
-color: var(--accent); }
-.carrier-opt:hover { border-color: var(--accent); }
+  :root {
+    --bg: #0d0f14;
+    --surface: #14171f;
+    --surface2: #1c2030;
+    --surface3: #252a3a;
+    --border: #2a2f42;
+    --accent: #4f8cff;
+    --accent2: #2de8b0;
+    --accent3: #ff6b6b;
+    --accent4: #ffd166;
+    --text: #e8ecf5;
+    --text2: #8b92a8;
+    --text3: #555e78;
+    --radius: 14px;
+    --radius-sm: 8px;
+    --shadow: 0 4px 32px rgba(0,0,0,0.5);
+    --shadow-lg: 0 8px 64px rgba(0,0,0,0.6);
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Background texture */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 60% 40% at 20% 10%, rgba(79,140,255,0.07) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 40% at 80% 80%, rgba(45,232,176,0.05) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* LAYOUT */
+  .app { position: relative; z-index: 1; display: flex; flex-direction: column; min-height: 100vh; max-width: 480px; margin: 0 auto; }
+
+  /* HEADER */
+  .header {
+    padding: 20px 20px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .logo {
+    font-family: 'Syne', sans-serif;
+    font-weight: 800;
+    font-size: 22px;
+    letter-spacing: -0.5px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .logo span { font-weight: 400; opacity: 0.6; }
+  .header-badge {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 12px;
+    font-size: 12px;
+    color: var(--text2);
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .header-badge .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--accent2);
+    box-shadow: 0 0 6px var(--accent2);
+    animation: pulse 2s ease-in-out infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+
+  /* NAV */
+  .nav {
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    padding: 16px 20px;
+    display: flex;
+    gap: 8px;
+    background: linear-gradient(to bottom, var(--bg) 70%, transparent);
+  }
+  .nav-btn {
+    flex: 1;
+    padding: 10px 6px;
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text2);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 11.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .nav-btn .nav-icon { font-size: 18px; }
+  .nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+  .nav-btn.active {
+    background: linear-gradient(135deg, rgba(79,140,255,0.2), rgba(45,232,176,0.1));
+    border-color: var(--accent);
+    color: var(--accent);
+    box-shadow: 0 0 0 1px rgba(79,140,255,0.2);
+  }
+
+  /* CONTENT */
+  .content { flex: 1; padding: 0 20px 100px; }
+  .screen { display: none; animation: fadeIn 0.3s ease; }
+  .screen.active { display: block; }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:none} }
+
+  /* SECTION TITLE */
+  .section-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 4px;
+    letter-spacing: -0.3px;
+  }
+  .section-sub {
+    color: var(--text2);
+    font-size: 13px;
+    margin-bottom: 20px;
+  }
+
+  /* STATS ROW */
+  .stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 20px; }
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .stat-num {
+    font-family: 'Syne', sans-serif;
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1;
+  }
+  .stat-label { font-size: 12px; color: var(--text2); }
+  .stat-card.accent { background: linear-gradient(135deg, rgba(79,140,255,0.12), rgba(79,140,255,0.04)); border-color: rgba(79,140,255,0.3); }
+  .stat-card.accent .stat-num { color: var(--accent); }
+  .stat-card.green { background: linear-gradient(135deg, rgba(45,232,176,0.1), rgba(45,232,176,0.03)); border-color: rgba(45,232,176,0.25); }
+  .stat-card.green .stat-num { color: var(--accent2); }
+
+  /* FORM */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 14px;
+  }
+  .card-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 13px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    color: var(--text2);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .card-title::before {
+    content: '';
+    display: block;
+    width: 3px;
+    height: 14px;
+    border-radius: 2px;
+    background: var(--accent);
+  }
+
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  label {
+    display: block;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--text2);
+    margin-bottom: 6px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  input, select, textarea {
+    width: 100%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 11px 14px;
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  input:focus, select:focus, textarea:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(79,140,255,0.12);
+  }
+  select option { background: var(--surface2); }
+
+  .input-row { display: flex; gap: 8px; align-items: flex-end; }
+  .input-row input { flex: 1; }
+
+  .scan-btn {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 11px 14px;
+    color: var(--accent);
+    cursor: pointer;
+    font-size: 18px;
+    transition: all 0.2s;
+    white-space: nowrap;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .scan-btn:hover { border-color: var(--accent); background: rgba(79,140,255,0.08); }
+
+  /* PHOTO AREA */
+  .photo-area {
+    background: var(--surface2);
+    border: 2px dashed var(--border);
+    border-radius: var(--radius);
+    min-height: 160px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .photo-area:hover { border-color: var(--accent); }
+  .photo-area.has-photo { border-style: solid; border-color: var(--accent); }
+  .photo-area img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; border-radius: 10px; }
+  .photo-placeholder { text-align: center; color: var(--text3); z-index: 1; }
+  .photo-placeholder .icon { font-size: 32px; margin-bottom: 8px; }
+  .photo-placeholder p { font-size: 13px; }
+  .photo-placeholder small { font-size: 11px; color: var(--text3); }
+  .photo-overlay {
+    position: absolute;
+    bottom: 10px; right: 10px;
+    background: rgba(0,0,0,0.7);
+    border-radius: 6px;
+    padding: 4px 8px;
+    font-size: 11px;
+    color: #fff;
+    z-index: 2;
+    backdrop-filter: blur(4px);
+  }
+  input[type="file"] { display: none; }
+
+  /* BUTTONS */
+  .btn {
+    width: 100%;
+    padding: 14px;
+    border-radius: var(--radius);
+    border: none;
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+  }
+  .btn-primary {
+    background: linear-gradient(135deg, var(--accent), #3a6fe8);
+    color: #fff;
+    box-shadow: 0 4px 20px rgba(79,140,255,0.3);
+  }
+  .btn-primary:hover { transform: translateY(-1px); box-shadow: 0 6px 28px rgba(79,140,255,0.4); }
+  .btn-primary:active { transform: none; }
+  .btn-success {
+    background: linear-gradient(135deg, var(--accent2), #22c49a);
+    color: var(--bg);
+    box-shadow: 0 4px 20px rgba(45,232,176,0.25);
+  }
+  .btn-success:hover { transform: translateY(-1px); }
+  .btn-danger {
+    background: rgba(255,107,107,0.12);
+    color: var(--accent3);
+    border: 1px solid rgba(255,107,107,0.3);
+    font-size: 13px;
+    padding: 10px;
+  }
+  .btn-sm {
+    width: auto;
+    padding: 8px 14px;
+    font-size: 12px;
+    border-radius: var(--radius-sm);
+  }
+
+  /* SEARCH */
+  .search-row {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .search-wrap { position: relative; flex: 1; }
+  .search-wrap input { padding-left: 38px; }
+  .search-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--text3);
+    font-size: 15px;
+    pointer-events: none;
+  }
+
+  /* PACKAGE LIST */
+  .pkg-list { display: flex; flex-direction: column; gap: 10px; }
+  .pkg-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px;
+    display: flex;
+    gap: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .pkg-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--accent);
+    border-radius: 3px 0 0 3px;
+  }
+  .pkg-card.delivered::before { background: var(--accent2); }
+  .pkg-card:hover { border-color: var(--accent); transform: translateX(2px); }
+  .pkg-thumb {
+    width: 52px;
+    height: 52px;
+    border-radius: var(--radius-sm);
+    background: var(--surface2);
+    object-fit: cover;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text3);
+    font-size: 22px;
+    border: 1px solid var(--border);
+  }
+  .pkg-thumb img { width: 100%; height: 100%; object-fit: cover; border-radius: 6px; }
+  .pkg-info { flex: 1; min-width: 0; }
+  .pkg-name {
+    font-family: 'Syne', sans-serif;
+    font-size: 15px;
+    font-weight: 700;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .pkg-meta { font-size: 12px; color: var(--text2); margin-top: 2px; display: flex; gap: 8px; flex-wrap: wrap; }
+  .pkg-track { font-size: 11px; color: var(--text3); margin-top: 4px; font-family: monospace; }
+  .pkg-badges { display: flex; gap: 6px; margin-top: 6px; align-items: center; }
+
+  /* BADGES */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 20px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    gap: 4px;
+  }
+  .badge-stock { background: rgba(79,140,255,0.15); color: var(--accent); border: 1px solid rgba(79,140,255,0.25); }
+  .badge-delivered { background: rgba(45,232,176,0.12); color: var(--accent2); border: 1px solid rgba(45,232,176,0.2); }
+  .badge-carrier {
+    background: var(--surface3);
+    color: var(--text2);
+    border: 1px solid var(--border);
+  }
+
+  /* CARRIER COLORS */
+  .carrier-correios { background: rgba(255,209,102,0.12); color: var(--accent4); border-color: rgba(255,209,102,0.2); }
+  .carrier-mercadolivre { background: rgba(255,230,0,0.1); color: #ffe600; border-color: rgba(255,230,0,0.2); }
+  .carrier-shopee { background: rgba(255,120,66,0.12); color: #ff7842; border-color: rgba(255,120,66,0.2); }
+  .carrier-jadlog { background: rgba(150,100,255,0.12); color: #c07aff; border-color: rgba(150,100,255,0.2); }
+  .carrier-amazon { background: rgba(255,153,0,0.1); color: #ff9900; border-color: rgba(255,153,0,0.2); }
+
+  /* EMPTY STATE */
+  .empty {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--text3);
+  }
+  .empty-icon { font-size: 48px; margin-bottom: 12px; opacity: 0.5; }
+  .empty h3 { font-size: 16px; color: var(--text2); margin-bottom: 6px; font-family: 'Syne', sans-serif; }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    backdrop-filter: blur(4px);
+    z-index: 200;
+    align-items: flex-end;
+    justify-content: center;
+  }
+  .modal-overlay.open { display: flex; animation: fadeIn 0.2s ease; }
+  .modal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px 20px 0 0;
+    width: 100%;
+    max-width: 480px;
+    max-height: 92vh;
+    overflow-y: auto;
+    padding: 24px 20px 32px;
+    animation: slideUp 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  }
+  @keyframes slideUp { from{transform:translateY(100%)} to{transform:none} }
+  .modal-handle {
+    width: 40px; height: 4px;
+    background: var(--border);
+    border-radius: 2px;
+    margin: -8px auto 20px;
+  }
+  .modal-title {
+    font-family: 'Syne', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .modal-sub { font-size: 13px; color: var(--text2); margin-bottom: 20px; }
+
+  /* DETAIL VIEW */
+  .detail-photo {
+    width: 100%;
+    height: 200px;
+    border-radius: var(--radius);
+    background: var(--surface2);
+    object-fit: cover;
+    margin-bottom: 16px;
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--text3);
+    font-size: 40px;
+  }
+  .detail-photo img { width: 100%; height: 100%; object-fit: cover; border-radius: var(--radius); }
+  .detail-row { display: flex; justify-content: space-between; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .detail-row:last-of-type { border-bottom: none; }
+  .detail-key { font-size: 12px; color: var(--text2); text-transform: uppercase; letter-spacing: 0.4px; font-weight: 500; }
+  .detail-val { font-size: 14px; font-weight: 500; text-align: right; max-width: 60%; }
+
+  /* TOAST */
+  .toast {
+    position: fixed;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%) translateY(20px);
+    background: var(--surface3);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 20px;
+    font-size: 14px;
+    font-weight: 500;
+    opacity: 0;
+    transition: all 0.3s;
+    z-index: 300;
+    white-space: nowrap;
+    max-width: calc(100vw - 40px);
+    text-align: center;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.success { border-color: rgba(45,232,176,0.4); color: var(--accent2); }
+  .toast.error { border-color: rgba(255,107,107,0.4); color: var(--accent3); }
+
+  /* FILTER ROW */
+  .filter-row { display: flex; gap: 8px; margin-bottom: 14px; flex-wrap: wrap; }
+  .filter-chip {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: var(--surface);
+    color: var(--text2);
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  .filter-chip.active {
+    background: rgba(79,140,255,0.15);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* SCROLLBAR */
+  ::-webkit-scrollbar { width: 4px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+  /* DATE DISPLAY */
+  .datetime-display {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 11px 14px;
+    font-size: 14px;
+    color: var(--text2);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .datetime-display .icon { color: var(--accent); }
+
+  /* CARRIER GRID */
+  .carrier-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+  .carrier-opt {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    padding: 10px 8px;
+    text-align: center;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: 500;
+    transition: all 0.2s;
+    color: var(--text2);
+  }
+  .carrier-opt .c-icon { font-size: 20px; margin-bottom: 4px; display: block; }
+  .carrier-opt.selected { border-color: var(--accent); background: rgba(79,140,255,0.12); color: var(--accent); }
+  .carrier-opt:hover { border-color: var(--accent); }
 </style>
 </head>
 <body>
+
 <div class="app">
-<!-- HEADER -->
-<div class="header">
-<div class="logo">Porta<span>Log</span></div>
-<div class="header-badge">
-<div class="dot"></div>
-<span id="headerCount">0 em estoque</span>
+
+  <!-- HEADER -->
+  <div class="header">
+    <div class="logo">Porta<span>Log</span></div>
+    <div class="header-badge">
+      <div class="dot"></div>
+      <span id="headerCount">0 em estoque</span>
+    </div>
+  </div>
+
+  <!-- MODE BAR -->
+  <div id="modeBar" style="display:flex;margin:10px 16px 0;background:var(--surface2);border-radius:14px;border:1px solid var(--border);padding:4px;gap:4px">
+    <button id="modePortaria" onclick="setMode('portaria')" style="flex:1;padding:9px 8px;border-radius:8px;border:none;background:var(--surface3);color:var(--accent);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer">🏢 Portaria</button>
+    <button id="modeCopias" onclick="setMode('copias')" style="flex:1;padding:9px 8px;border-radius:8px;border:none;background:transparent;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer">📋 Setor de Cópias</button>
+  </div>
+
+  <!-- NAV PORTARIA -->
+  <nav class="nav" id="navPortaria">
+    <button class="nav-btn active" onclick="showScreen('register')" id="nav-register">
+      <span class="nav-icon">📦</span>
+      <span>Registrar</span>
+    </button>
+    <button class="nav-btn" onclick="showScreen('stock')" id="nav-stock">
+      <span class="nav-icon">🗃️</span>
+      <span>Estoque</span>
+    </button>
+    <button class="nav-btn" onclick="showScreen('copies-out')" id="nav-copies-out">
+      <span class="nav-icon">📤</span>
+      <span>P/ Cópias</span>
+    </button>
+    <button class="nav-btn" onclick="showScreen('history')" id="nav-history">
+      <span class="nav-icon">📋</span>
+      <span>Histórico</span>
+    </button>
+  </nav>
+
+  <!-- NAV COPIAS -->
+  <nav class="nav" id="navCopias" style="display:none">
+    <button class="nav-btn active" onclick="showScreen('copies-stock')" id="nav-copies-stock">
+      <span class="nav-icon">📬</span>
+      <span>Aguardando</span>
+    </button>
+    <button class="nav-btn" onclick="showScreen('copies-history')" id="nav-copies-history">
+      <span class="nav-icon">✅</span>
+      <span>Entregues</span>
+    </button>
+  </nav>
+
+  <div class="content">
+
+    <!-- SCREEN: REGISTER -->
+    <div class="screen active" id="screen-register">
+      <div class="section-title">Nova Encomenda</div>
+      <div class="section-sub">Registre a chegada de uma encomenda</div>
+
+      <!-- Photo -->
+      <div class="card">
+        <div class="card-title">Foto da Encomenda</div>
+        <div class="photo-area" id="photoArea" onclick="document.getElementById('photoInput').click()">
+          <div class="photo-placeholder" id="photoPlaceholder">
+            <div class="icon">📷</div>
+            <p>Tirar foto ou selecionar</p>
+            <small>Toque para abrir a câmera</small>
+          </div>
+          <div class="photo-overlay" id="photoOverlay" style="display:none">Trocar foto</div>
+        </div>
+        <input type="file" id="photoInput" accept="image/*" capture="environment" onchange="handlePhoto(this)">
+      </div>
+
+      <!-- Tracking + Carrier -->
+      <div class="card">
+        <div class="card-title">Identificação</div>
+
+        <div class="field">
+          <label>Código de Rastreio</label>
+          <div class="input-row">
+            <input type="text" id="trackingCode" placeholder="Ex: BR123456789BR" autocomplete="off">
+            <button class="scan-btn" onclick="triggerScan('trackingCode')" title="Escanear código de barras">
+              <span>⬛</span> Scan
+            </button>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Transportadora</label>
+          <div class="carrier-grid" id="carrierGrid">
+            <div class="carrier-opt" data-carrier="Correios" onclick="selectCarrier(this)">
+              <span class="c-icon">🟡</span> Correios
+            </div>
+            <div class="carrier-opt" data-carrier="Mercado Livre" onclick="selectCarrier(this)">
+              <span class="c-icon">🛒</span> Mercado Livre
+            </div>
+            <div class="carrier-opt" data-carrier="Shopee" onclick="selectCarrier(this)">
+              <span class="c-icon">🟠</span> Shopee
+            </div>
+            <div class="carrier-opt" data-carrier="Jadlog" onclick="selectCarrier(this)">
+              <span class="c-icon">🟣</span> Jadlog
+            </div>
+            <div class="carrier-opt" data-carrier="Amazon" onclick="selectCarrier(this)">
+              <span class="c-icon">📦</span> Amazon
+            </div>
+            <div class="carrier-opt" data-carrier="Outro" onclick="selectCarrier(this)">
+              <span class="c-icon">🚚</span> Outro
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recipient -->
+      <div class="card">
+        <div class="card-title">Destinatário</div>
+
+        <div class="field">
+          <label>Tipo de Destinatário</label>
+          <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
+            <div class="carrier-opt" data-rt="Aluno" onclick="selRtype(this)" style="padding:12px 6px"><span style="font-size:20px;display:block;margin-bottom:3px">🎓</span>Aluno</div>
+            <div class="carrier-opt" data-rt="Funcionário" onclick="selRtype(this)" style="padding:12px 6px"><span style="font-size:20px;display:block;margin-bottom:3px">👷</span>Funcionário</div>
+            <div class="carrier-opt" data-rt="Compras" onclick="selRtype(this)" style="padding:12px 6px"><span style="font-size:20px;display:block;margin-bottom:3px">🛒</span>Compras</div>
+          </div>
+        </div>
+
+        <div class="field" style="position:relative">
+          <label>Nome do Destinatário</label>
+          <input type="text" id="recipientName" placeholder="Nome completo" autocomplete="off"
+            oninput="this.value=this.value.replace(/\b\w/g,l=>l.toUpperCase());showNameSuggestions(this.value)"
+            onblur="setTimeout(()=>hideNameSuggestions(),200)">
+          <div id="nameSuggestions" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:10px;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,.3);max-height:180px;overflow-y:auto"></div>
+        </div>
+
+        <div class="field">
+          <label>Sala / Setor</label>
+          <input type="text" id="recipientRoom" placeholder="Ex: Sala 302 / RH / TI">
+        </div>
+
+        <div class="field">
+          <label>Observação (opcional)</label>
+          <textarea id="obsField" placeholder="Ex: Caixa amassada, volume frágil..." rows="2" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 13px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;resize:vertical;min-height:64px;transition:border-color .2s"></textarea>
+        </div>
+      </div>
+
+      <!-- Date/Time -->
+      <div class="card">
+        <div class="card-title">Data e Hora de Chegada</div>
+        <div class="datetime-display">
+          <span class="icon">🕐</span>
+          <span id="arrivalDateTime">—</span>
+        </div>
+        <p style="font-size:11px;color:var(--text3);margin-top:8px">Preenchido automaticamente no momento do registro</p>
+      </div>
+
+      <button class="btn btn-primary" onclick="registerPackage()" style="margin-bottom:8px">
+        ✅ Registrar Chegada
+      </button>
+      <button class="btn" onclick="toggleBatchMode()" id="btnBatch" style="width:100%;margin-bottom:8px;background:var(--surface2);border:1px solid var(--border);color:var(--text2);font-size:13px">📦 Ativar Modo Lote</button>
+      <div id="batchPanel" style="display:none;background:var(--surface2);border:2px solid #c07aff;border-radius:14px;padding:14px;margin-bottom:10px">
+        <div style="font-size:13px;font-weight:700;color:#c07aff;margin-bottom:6px">📦 Modo Lote Ativado</div>
+        <p style="font-size:12px;color:var(--text2);margin-bottom:10px">Transportadora, tipo, nome e sala ficam salvos. Só troque foto e rastreio para a próxima encomenda.</p>
+        <button class="btn btn-success" onclick="nextBatchItem()" style="width:100%;margin-bottom:6px">➡️ Próxima Encomenda</button>
+        <button class="btn btn-danger" onclick="toggleBatchMode()" style="width:100%;font-size:12px">✖ Desativar Modo Lote</button>
+      </div>
+    </div>
+
+    <!-- SCREEN: STOCK -->
+    <div class="screen" id="screen-stock">
+      <div class="section-title">Em Estoque</div>
+      <div class="section-sub" id="stockSubtitle">Encomendas aguardando retirada</div>
+
+      <div class="stats-row">
+        <div class="stat-card accent">
+          <div class="stat-num" id="statStock">0</div>
+          <div class="stat-label">Em estoque</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="statToday" style="color:var(--accent4)">0</div>
+          <div class="stat-label">Chegaram hoje</div>
+        </div>
+      </div>
+
+      <div class="search-row">
+        <div class="search-wrap" style="flex:1">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="stockSearch" placeholder="Buscar por nome ou rastreio..." oninput="renderStock()">
+        </div>
+        <button class="scan-btn" onclick="triggerScan('stockSearch', true)" title="Scan">
+          <span>⬛</span>
+        </button>
+      </div>
+
+      <button onclick="shareWhatsApp()" style="width:100%;padding:12px;border-radius:14px;border:none;background:linear-gradient(135deg,#25d366,#1aaa52);color:#fff;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:12px;box-shadow:0 4px 16px rgba(37,211,102,.25)">📲 Compartilhar Pendentes no WhatsApp</button>
+      <div class="pkg-list" id="stockList"></div>
+    </div>
+
+    <!-- SCREEN: HISTORY -->
+    <div class="screen" id="screen-history">
+      <div class="section-title">Histórico</div>
+      <div class="section-sub">Encomendas já entregues</div>
+
+      <div class="stats-row">
+        <div class="stat-card green">
+          <div class="stat-num" id="statDelivered">0</div>
+          <div class="stat-label">Entregues</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-num" id="statTotal" style="color:var(--text)">0</div>
+          <div class="stat-label">Total registradas</div>
+        </div>
+      </div>
+
+      <div class="search-row">
+        <div class="search-wrap" style="flex:1">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="historySearch" placeholder="Buscar por nome ou rastreio..." oninput="renderHistory()">
+        </div>
+      </div>
+
+      <div class="filter-row" id="monthFilters"></div>
+
+      <div class="pkg-list" id="historyList"></div>
+    </div>
+
+    <!-- COPIES OUT -->
+    <div class="screen" id="screen-copies-out">
+      <div class="section-title">Enviar para Cópias</div>
+      <div class="section-sub">Selecione encomendas de alunos para enviar</div>
+      <div class="stats-row">
+        <div class="stat-card accent"><div class="stat-num" id="statInCopies">0</div><div class="stat-label">No setor de cópias</div></div>
+        <div class="stat-card"><div class="stat-num" id="statAlunoStock">0</div><div class="stat-label">Alunos em estoque</div></div>
+      </div>
+      <div class="search-row">
+        <div class="search-wrap" style="flex:1"><span class="search-icon">🔍</span><input type="text" id="copiesOutSearch" placeholder="Buscar aluno..." oninput="renderCopiesOut()"></div>
+      </div>
+      <p style="font-size:11px;color:var(--text2);margin-bottom:10px">Toque para selecionar → clique "Enviar"</p>
+      <div class="pkg-list" id="copiesOutList"></div>
+    </div>
+
+    <!-- COPIES STOCK -->
+    <div class="screen" id="screen-copies-stock">
+      <div class="section-title" style="color:#c07aff">Setor de Cópias</div>
+      <div class="section-sub" id="copiesSub">Encomendas aguardando retirada pelos alunos</div>
+      <div class="stats-row">
+        <div class="stat-card accent"><div class="stat-num" id="statCopiesWaiting">0</div><div class="stat-label">Aguardando retirada</div></div>
+        <div class="stat-card"><div class="stat-num" id="statCopiesToday" style="color:var(--accent4)">0</div><div class="stat-label">Chegaram hoje</div></div>
+      </div>
+      <div class="search-row">
+        <div class="search-wrap" style="flex:1"><span class="search-icon">🔍</span><input type="text" id="copiesSearch" placeholder="Buscar aluno..." oninput="renderCopiesStock()"></div>
+      </div>
+      <button onclick="shareWhatsAppCopias()" style="width:100%;padding:12px;border-radius:14px;border:none;background:linear-gradient(135deg,#25d366,#1aaa52);color:#fff;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:12px;box-shadow:0 4px 16px rgba(37,211,102,.25)">📲 Compartilhar Lista com Residenciais</button>
+      <div class="pkg-list" id="copiesStockList"></div>
+    </div>
+
+    <!-- VISUALIZACAO -->
+    <div class="screen" id="screen-visualizacao">
+      <div class="section-title" style="color:var(--accent4)">👁️ Visualização</div>
+      <div class="section-sub">Encomendas atuais — somente leitura</div>
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <button onclick="setVisTab('portaria')" id="visTabPortaria" style="flex:1;padding:10px;border-radius:10px;border:none;background:var(--surface3);color:var(--accent);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer">🏢 Portaria</button>
+        <button onclick="setVisTab('copias')" id="visTabCopias" style="flex:1;padding:10px;border-radius:10px;border:none;background:transparent;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;border:1px solid var(--border)">📋 Cópias</button>
+      </div>
+      <div class="search-row">
+        <div class="search-wrap" style="flex:1"><span class="search-icon">🔍</span><input type="text" id="visSearch" placeholder="Buscar..." oninput="renderVis()"></div>
+      </div>
+      <div class="pkg-list" id="visList"></div>
+    </div>
+
+    <!-- COPIES HISTORY -->
+    <div class="screen" id="screen-copies-history">
+      <div class="section-title">Histórico — Cópias</div>
+      <div class="section-sub">Encomendas retiradas pelos alunos</div>
+      <div class="search-row">
+        <div class="search-wrap" style="flex:1"><span class="search-icon">🔍</span><input type="text" id="copiesHistSearch" placeholder="Buscar aluno..." oninput="renderCopiesHistory()"></div>
+      </div>
+      <div class="pkg-list" id="copiesHistList"></div>
+    </div>
+
+  </div>
 </div>
-</div>
-<!-- MODE BAR -->
-<div id="modeBar" style="display:flex;margin:10px 16px
-0;background:var(--surface2);border-radius:14px;border:1px solid
-var(--border);padding:4px;gap:4px">
-<button id="modePortaria" onclick="setMode('portaria')" style="flex:1;padding:9px
-8px;border-radius:8px;border:none;background:var(--surface3);color:var(--accent);font-family
-:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer">🏢 Portaria</button>
-<button id="modeCopias" onclick="setMode('copias')" style="flex:1;padding:9px
-8px;border-radius:8px;border:none;background:transparent;color:var(--text2);font-family:'DM
-Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer">📋 Setor de Cópias</button>
-</div>
-<!-- NAV PORTARIA -->
-<nav class="nav" id="navPortaria">
-<button class="nav-btn active" onclick="showScreen('register')" id="nav-register">
-<span class="nav-icon">📦</span>
-<span>Registrar</span>
-</button>
-<button class="nav-btn" onclick="showScreen('stock')" id="nav-stock">
-<span class="nav-icon">🗃</span>
-<span>Estoque</span>
-</button>
-<button class="nav-btn" onclick="showScreen('copies-out')" id="nav-copies-out">
-<span class="nav-icon">📤</span>
-<span>P/ Cópias</span>
-</button>
-<button class="nav-btn" onclick="showScreen('history')" id="nav-history">
-<span class="nav-icon">📋</span>
-<span>Histórico</span>
-</button>
-</nav>
-<!-- NAV COPIAS -->
-<nav class="nav" id="navCopias" style="display:none">
-<button class="nav-btn active" onclick="showScreen('copies-stock')"
-id="nav-copies-stock">
-<span class="nav-icon">📬</span>
-<span>Aguardando</span>
-</button>
-<button class="nav-btn" onclick="showScreen('copies-history')" id="nav-copies-history">
-<span class="nav-icon">✅</span>
-<span>Entregues</span>
-</button>
-</nav>
-<div class="content">
-<!-- SCREEN: REGISTER -->
-<div class="screen active" id="screen-register">
-<div class="section-title">Nova Encomenda</div>
-<div class="section-sub">Registre a chegada de uma encomenda</div>
-<!-- Photo -->
-<div class="card">
-<div class="card-title">Foto da Encomenda</div>
-<div class="photo-area" id="photoArea"
-onclick="document.getElementById('photoInput').click()">
-<div class="photo-placeholder" id="photoPlaceholder">
-<div class="icon">📷</div>
-<p>Tirar foto ou selecionar</p>
-<small>Toque para abrir a câmera</small>
-</div>
-<div class="photo-overlay" id="photoOverlay" style="display:none">Trocar foto</div>
-</div>
-<input type="file" id="photoInput" accept="image/*" capture="environment"
-onchange="handlePhoto(this)">
-</div>
-<!-- Tracking + Carrier -->
-<div class="card">
-<div class="card-title">Identificação</div>
-<div class="field">
-<label>Código de Rastreio</label>
-<div class="input-row">
-<input type="text" id="trackingCode" placeholder="Ex: BR123456789BR"
-autocomplete="off">
-<button class="scan-btn" onclick="triggerScan('trackingCode')" title="Escanear
-código de barras">
-<span>⬛</span> Scan
-</button>
-</div>
-</div>
-<div class="field">
-<label>Transportadora</label>
-<div class="carrier-grid" id="carrierGrid">
-<div class="carrier-opt" data-carrier="Correios" onclick="selectCarrier(this)">
-<span class="c-icon">🟡</span> Correios
-</div>
-<div class="carrier-opt" data-carrier="Mercado Livre" onclick="selectCarrier(this)">
-<span class="c-icon">🛒</span> Mercado Livre
-</div>
-<div class="carrier-opt" data-carrier="Shopee" onclick="selectCarrier(this)">
-<span class="c-icon">🟠</span> Shopee
-</div>
-<div class="carrier-opt" data-carrier="Jadlog" onclick="selectCarrier(this)">
-<span class="c-icon">🟣</span> Jadlog
-</div>
-<div class="carrier-opt" data-carrier="Amazon" onclick="selectCarrier(this)">
-<span class="c-icon">📦</span> Amazon
-</div>
-<div class="carrier-opt" data-carrier="Outro" onclick="selectCarrier(this)">
-<span class="c-icon">🚚</span> Outro
-</div>
-</div>
-</div>
-</div>
-<!-- Recipient -->
-<div class="card">
-<div class="card-title">Destinatário</div>
-<div class="field">
-<label>Tipo de Destinatário</label>
-<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
-<div class="carrier-opt" data-rt="Aluno" onclick="selRtype(this)" style="padding:12px
-6px"><span style="font-size:20px;display:block;margin-bottom:3px">🎓</span>Aluno</div>
-<div class="carrier-opt" data-rt="Funcionário" onclick="selRtype(this)"
-style="padding:12px 6px"><span
-style="font-size:20px;display:block;margin-bottom:3px">👷</span>Funcionário</div>
-<div class="carrier-opt" data-rt="Compras" onclick="selRtype(this)"
-style="padding:12px 6px"><span
-style="font-size:20px;display:block;margin-bottom:3px">🛒</span>Compras</div>
-</div>
-</div>
-<div class="field" style="position:relative">
-<label>Nome do Destinatário</label>
-<input type="text" id="recipientName" placeholder="Nome completo"
-autocomplete="off"
-oninput="this.value=this.value.replace(/\b\w/g,l=>l.toUpperCase());showNameSuggestions(t
-his.value)"
-onblur="setTimeout(()=>hideNameSuggestions(),200)">
-<div id="nameSuggestions"
-style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);borde
-r:1px solid var(--border);border-radius:10px;z-index:200;box-shadow:0 8px 24px
-rgba(0,0,0,.3);max-height:180px;overflow-y:auto"></div>
-</div>
-<div class="field">
-<label>Sala / Setor</label>
-<input type="text" id="recipientRoom" placeholder="Ex: Sala 302 / RH / TI">
-</div>
-<div class="field">
-<label>Observação (opcional)</label>
-<textarea id="obsField" placeholder="Ex: Caixa amassada, volume frágil..." rows="2"
-style="width:100%;background:var(--surface2);border:1px solid
-var(--border);border-radius:var(--radius-sm);padding:10px
-13px;color:var(--text);font-family:'DM
-Sans',sans-serif;font-size:14px;outline:none;resize:vertical;min-height:64px;transition:border-
-color .2s"></textarea>
-</div>
-</div>
-<!-- Date/Time -->
-<div class="card">
-<div class="card-title">Data e Hora de Chegada</div>
-<div class="datetime-display">
-<span class="icon">🕐</span>
-<span id="arrivalDateTime">—</span>
-</div>
-<p style="font-size:11px;color:var(--text3);margin-top:8px">Preenchido
-automaticamente no momento do registro</p>
-</div>
-<button class="btn btn-primary" onclick="registerPackage()" style="margin-bottom:8px">
-✅ Registrar Chegada
-</button>
-<button class="btn" onclick="toggleBatchMode()" id="btnBatch"
-style="width:100%;margin-bottom:8px;background:var(--surface2);border:1px solid
-var(--border);color:var(--text2);font-size:13px">📦 Ativar Modo Lote</button>
-<div id="batchPanel" style="display:none;background:var(--surface2);border:2px solid
-#c07aff;border-radius:14px;padding:14px;margin-bottom:10px">
-<div style="font-size:13px;font-weight:700;color:#c07aff;margin-bottom:6px">📦 Modo
-Lote Ativado</div>
-<p style="font-size:12px;color:var(--text2);margin-bottom:10px">Transportadora, tipo,
-nome e sala ficam salvos. Só troque foto e rastreio para a próxima encomenda.</p>
-<button class="btn btn-success" onclick="nextBatchItem()"
-style="width:100%;margin-bottom:6px">➡ Próxima Encomenda</button>
-<button class="btn btn-danger" onclick="toggleBatchMode()"
-style="width:100%;font-size:12px">✖ Desativar Modo Lote</button>
-</div>
-</div>
-<!-- SCREEN: STOCK -->
-<div class="screen" id="screen-stock">
-<div class="section-title">Em Estoque</div>
-<div class="section-sub" id="stockSubtitle">Encomendas aguardando retirada</div>
-<div class="stats-row">
-<div class="stat-card accent">
-<div class="stat-num" id="statStock">0</div>
-<div class="stat-label">Em estoque</div>
-</div>
-<div class="stat-card">
-<div class="stat-num" id="statToday" style="color:var(--accent4)">0</div>
-<div class="stat-label">Chegaram hoje</div>
-</div>
-</div>
-<div class="search-row">
-<div class="search-wrap" style="flex:1">
-<span class="search-icon">🔍</span>
-<input type="text" id="stockSearch" placeholder="Buscar por nome ou rastreio..."
-oninput="renderStock()">
-</div>
-<button class="scan-btn" onclick="triggerScan('stockSearch', true)" title="Scan">
-<span>⬛</span>
-</button>
-</div>
-<button onclick="shareWhatsApp()"
-style="width:100%;padding:12px;border-radius:14px;border:none;background:linear-gradient
-(135deg,#25d366,#1aaa52);color:#fff;font-family:'Syne',sans-serif;font-size:13px;font-weight:
-700;cursor:pointer;margin-bottom:12px;box-shadow:0 4px 16px rgba(37,211,102,.25)">📲
-Compartilhar Pendentes no WhatsApp</button>
-<div class="pkg-list" id="stockList"></div>
-</div>
-<!-- SCREEN: HISTORY -->
-<div class="screen" id="screen-history">
-<div class="section-title">Histórico</div>
-<div class="section-sub">Encomendas já entregues</div>
-<div class="stats-row">
-<div class="stat-card green">
-<div class="stat-num" id="statDelivered">0</div>
-<div class="stat-label">Entregues</div>
-</div>
-<div class="stat-card">
-<div class="stat-num" id="statTotal" style="color:var(--text)">0</div>
-<div class="stat-label">Total registradas</div>
-</div>
-</div>
-<div class="search-row">
-<div class="search-wrap" style="flex:1">
-<span class="search-icon">🔍</span>
-<input type="text" id="historySearch" placeholder="Buscar por nome ou rastreio..."
-oninput="renderHistory()">
-</div>
-</div>
-<div class="filter-row" id="monthFilters"></div>
-<div class="pkg-list" id="historyList"></div>
-</div>
-<!-- COPIES OUT -->
-<div class="screen" id="screen-copies-out">
-<div class="section-title">Enviar para Cópias</div>
-<div class="section-sub">Selecione encomendas de alunos para enviar</div>
-<div class="stats-row">
-<div class="stat-card accent"><div class="stat-num" id="statInCopies">0</div><div
-class="stat-label">No setor de cópias</div></div>
-<div class="stat-card"><div class="stat-num" id="statAlunoStock">0</div><div
-class="stat-label">Alunos em estoque</div></div>
-</div>
-<div class="search-row">
-<div class="search-wrap" style="flex:1"><span class="search-icon">🔍</span><input
-type="text" id="copiesOutSearch" placeholder="Buscar aluno..."
-oninput="renderCopiesOut()"></div>
-</div>
-<p style="font-size:11px;color:var(--text2);margin-bottom:10px">Toque para selecionar
-→ clique "Enviar"</p>
-<div class="pkg-list" id="copiesOutList"></div>
-</div>
-<!-- COPIES STOCK -->
-<div class="screen" id="screen-copies-stock">
-<div class="section-title" style="color:#c07aff">Setor de Cópias</div>
-<div class="section-sub" id="copiesSub">Encomendas aguardando retirada pelos
-alunos</div>
-<div class="stats-row">
-<div class="stat-card accent"><div class="stat-num"
-id="statCopiesWaiting">0</div><div class="stat-label">Aguardando retirada</div></div>
-<div class="stat-card"><div class="stat-num" id="statCopiesToday"
-style="color:var(--accent4)">0</div><div class="stat-label">Chegaram hoje</div></div>
-</div>
-<div class="search-row">
-<div class="search-wrap" style="flex:1"><span class="search-icon">🔍</span><input
-type="text" id="copiesSearch" placeholder="Buscar aluno..."
-oninput="renderCopiesStock()"></div>
-</div>
-<button onclick="shareWhatsAppCopias()"
-style="width:100%;padding:12px;border-radius:14px;border:none;background:linear-gradient
-(135deg,#25d366,#1aaa52);color:#fff;font-family:'Syne',sans-serif;font-size:13px;font-weight:
-700;cursor:pointer;margin-bottom:12px;box-shadow:0 4px 16px rgba(37,211,102,.25)">📲
-Compartilhar Lista com Residenciais</button>
-<div class="pkg-list" id="copiesStockList"></div>
-</div>
-<!-- VISUALIZACAO -->
-<div class="screen" id="screen-visualizacao">
-<div class="section-title" style="color:var(--accent4)">👁 Visualização</div>
-<div class="section-sub">Encomendas atuais — somente leitura</div>
-<div style="display:flex;gap:8px;margin-bottom:14px">
-<button onclick="setVisTab('portaria')" id="visTabPortaria"
-style="flex:1;padding:10px;border-radius:10px;border:none;background:var(--surface3);color
-:var(--accent);font-family:'DM
-Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer">🏢 Portaria</button>
-<button onclick="setVisTab('copias')" id="visTabCopias"
-style="flex:1;padding:10px;border-radius:10px;border:none;background:transparent;color:var
-(--text2);font-family:'DM
-Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer;border:1px solid
-var(--border)">📋 Cópias</button>
-</div>
-<div class="search-row">
-<div class="search-wrap" style="flex:1"><span class="search-icon">🔍</span><input
-type="text" id="visSearch" placeholder="Buscar..." oninput="renderVis()"></div>
-</div>
-<div class="pkg-list" id="visList"></div>
-</div>
-<!-- COPIES HISTORY -->
-<div class="screen" id="screen-copies-history">
-<div class="section-title">Histórico — Cópias</div>
-<div class="section-sub">Encomendas retiradas pelos alunos</div>
-<div class="search-row">
-<div class="search-wrap" style="flex:1"><span class="search-icon">🔍</span><input
-type="text" id="copiesHistSearch" placeholder="Buscar aluno..."
-oninput="renderCopiesHistory()"></div>
-</div>
-<div class="pkg-list" id="copiesHistList"></div>
-</div>
-</div>
-</div>
+
 <!-- SEND BAR -->
-<div id="sendBar"
-style="display:none;position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;
-max-width:480px;padding:11px 16px;background:var(--surface);border-top:2px solid
-#c07aff;z-index:150;gap:10px;align-items:center">
-<div style="flex:1"><strong style="font-size:14px;color:#c07aff" id="sendBarCount">0
-selecionadas</strong><small style="display:block;font-size:11px;color:var(--text2)">Prontas
-para enviar ao setor de cópias</small></div>
-<button onclick="sendToCopies()" style="padding:10px
-16px;border-radius:14px;border:none;background:linear-gradient(135deg,#c07aff,#9b5de5);
-color:#fff;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer">📤
-Enviar</button>
+<div id="sendBar" style="display:none;position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;padding:11px 16px;background:var(--surface);border-top:2px solid #c07aff;z-index:150;gap:10px;align-items:center">
+  <div style="flex:1"><strong style="font-size:14px;color:#c07aff" id="sendBarCount">0 selecionadas</strong><small style="display:block;font-size:11px;color:var(--text2)">Prontas para enviar ao setor de cópias</small></div>
+  <button onclick="sendToCopies()" style="padding:10px 16px;border-radius:14px;border:none;background:linear-gradient(135deg,#c07aff,#9b5de5);color:#fff;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer">📤 Enviar</button>
 </div>
+
 <!-- MODAL: PACKAGE DETAIL (STOCK) -->
 <div class="modal-overlay" id="modal-detail">
-<div class="modal">
-<div class="modal-handle"></div>
-<div class="modal-title" id="modalTitle">Detalhes</div>
-<div class="modal-sub" id="modalSub"></div>
-<div id="modalPhotoWrap">
-<div class="detail-photo" id="modalPhoto">📦</div>
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title" id="modalTitle">Detalhes</div>
+    <div class="modal-sub" id="modalSub"></div>
+
+    <div id="modalPhotoWrap">
+      <div class="detail-photo" id="modalPhoto">📦</div>
+    </div>
+
+    <div id="modalDetails"></div>
+
+    <div id="modalDeliverySection" style="margin-top:16px">
+      <div class="card" style="margin-bottom:12px">
+        <div class="card-title">Registrar Retirada</div>
+        <div class="field">
+          <label>Nome de Quem Retirou</label>
+          <input type="text" id="withdrawName" placeholder="Nome completo de quem retirou">
+        </div>
+      </div>
+      <button class="btn btn-success" onclick="confirmDelivery()">
+        ✅ Confirmar Retirada
+      </button>
+    </div>
+
+    <button class="btn btn-danger" style="margin-top:10px" onclick="closeModal()">
+      Fechar
+    </button>
+  </div>
 </div>
-<div id="modalDetails"></div>
-<div id="modalDeliverySection" style="margin-top:16px">
-<div class="card" style="margin-bottom:12px">
-<div class="card-title">Registrar Retirada</div>
-<div class="field">
-<label>Nome de Quem Retirou</label>
-<input type="text" id="withdrawName" placeholder="Nome completo de quem
-retirou">
-</div>
-</div>
-<button class="btn btn-success" onclick="confirmDelivery()">
-✅ Confirmar Retirada
-</button>
-</div>
-<button class="btn btn-danger" style="margin-top:10px" onclick="closeModal()">
-Fechar
-</button>
-</div>
-</div>
+
 <!-- MODAL: SCAN -->
 <div class="modal-overlay" id="modal-scan">
-<div class="modal">
-<div class="modal-handle"></div>
-<div class="modal-title">📷 Escanear Código</div>
-<div class="modal-sub">Aponte a câmera para o código de barras da etiqueta</div>
-<!-- html5-qrcode render target -->
-<div id="qr-reader"
-style="width:100%;border-radius:var(--radius);overflow:hidden;margin-bottom:4px;backgroun
-d:#000;min-height:60px"></div>
-<!-- Status messages -->
-<div id="scanStatusMsg"
-style="font-size:12px;color:var(--text2);text-align:center;min-height:20px;margin-bottom:12px
-"></div>
-<!-- Manual fallback -->
-<div class="field">
-<label>Ou digite / cole o código manualmente</label>
-<input type="text" id="scanInput" placeholder="Ex: BR123456789BR">
+  <div class="modal">
+    <div class="modal-handle"></div>
+    <div class="modal-title">📷 Escanear Código</div>
+    <div class="modal-sub">Aponte a câmera para o código de barras da etiqueta</div>
+
+    <!-- html5-qrcode render target -->
+    <div id="qr-reader" style="width:100%;border-radius:var(--radius);overflow:hidden;margin-bottom:4px;background:#000;min-height:60px"></div>
+
+    <!-- Status messages -->
+    <div id="scanStatusMsg" style="font-size:12px;color:var(--text2);text-align:center;min-height:20px;margin-bottom:12px"></div>
+
+    <!-- Manual fallback -->
+    <div class="field">
+      <label>Ou digite / cole o código manualmente</label>
+      <input type="text" id="scanInput" placeholder="Ex: BR123456789BR">
+    </div>
+
+    <div style="display:flex;gap:8px;margin-top:12px">
+      <button class="btn btn-primary" onclick="confirmScan()" style="flex:1">✅ Confirmar</button>
+      <button class="btn btn-danger" onclick="closeScan()" style="flex:1">Cancelar</button>
+    </div>
+    <p style="font-size:11px;color:var(--text3);margin-top:10px;text-align:center">
+      Scanner físico USB/Bluetooth também funciona — escaneie e o código aparece automaticamente.
+    </p>
+  </div>
 </div>
-<div style="display:flex;gap:8px;margin-top:12px">
-<button class="btn btn-primary" onclick="confirmScan()" style="flex:1">✅
-Confirmar</button>
-<button class="btn btn-danger" onclick="closeScan()" style="flex:1">Cancelar</button>
-</div>
-<p style="font-size:11px;color:var(--text3);margin-top:10px;text-align:center">
-Scanner físico USB/Bluetooth também funciona — escaneie e o código aparece
-automaticamente.
-</p>
-</div>
-</div>
+
 <!-- TOAST -->
 <div class="toast" id="toast"></div>
 <!-- LOADING BAR -->
-<div id="loadingBar"
-style="display:none;position:fixed;top:0;left:0;right:0;height:3px;background:linear-gradient(to
-right,var(--accent),var(--accent2));z-index:999;animation:loadingAnim 1.2s ease-in-out
-infinite"></div>
+<div id="loadingBar" style="display:none;position:fixed;top:0;left:0;right:0;height:3px;background:linear-gradient(to right,var(--accent),var(--accent2));z-index:999;animation:loadingAnim 1.2s ease-in-out infinite"></div>
 <style>
 @keyframes loadingAnim {
-0%{opacity:1} 50%{opacity:0.4} 100%{opacity:1}
+  0%{opacity:1} 50%{opacity:0.4} 100%{opacity:1}
 }
 </style>
+
 <script>
 // =====================
 // FIREBASE CONFIG
 // =====================
 const firebaseConfig = {
-apiKey: "AIzaSyBfICxNMxTiRy05663-TSW-2b0Kg0D295M",
-authDomain: "portalog.firebaseapp.com",
-projectId: "portalog",
-storageBucket: "portalog.firebasestorage.app",
-messagingSenderId: "621102213436",
-appId: "1:621102213436:web:e5465ae6e39a9eeeac5639",
-measurementId: "G-MPKPS71LRQ"
+  apiKey: "AIzaSyBfICxNMxTiRy05663-TSW-2b0Kg0D295M",
+  authDomain: "portalog.firebaseapp.com",
+  projectId: "portalog",
+  storageBucket: "portalog.firebasestorage.app",
+  messagingSenderId: "621102213436",
+  appId: "1:621102213436:web:e5465ae6e39a9eeeac5639",
+  measurementId: "G-MPKPS71LRQ"
 };
+
 firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const packagesCol = db.collection('encomendas');
+
 // =====================
 // DATA LAYER (Firebase)
 // =====================
@@ -999,986 +967,980 @@ let currentPackageId = null;
 let scanTarget = null;
 let scanCallback = null;
 let activeMonthFilter = null;
+
 // Listen in real-time to all packages
 function initRealtimeSync() {
-showLoading(true);
-packagesCol.orderBy('arrivalDate', 'desc').onSnapshot(snapshot => {
-packages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-showLoading(false);
-updateStats();
-renderStock();
-buildMonthFilters();
-renderHistory();
-if (document.getElementById('screen-visualizacao').classList.contains('active'))
-renderVis();
-}, err => {
-showLoading(false);
-showToast('⚠ Erro de conexão com o servidor', 'error');
-});
+  showLoading(true);
+  packagesCol.orderBy('arrivalDate', 'desc').onSnapshot(snapshot => {
+    packages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    showLoading(false);
+    updateStats();
+    renderStock();
+    buildMonthFilters();
+    renderHistory();
+    if (document.getElementById('screen-visualizacao').classList.contains('active')) renderVis();
+  }, err => {
+    showLoading(false);
+    showToast('⚠️ Erro de conexão com o servidor', 'error');
+  });
 }
+
 function showLoading(on) {
-const el = document.getElementById('loadingBar');
-if (el) el.style.display = on ? 'block' : 'none';
+  const el = document.getElementById('loadingBar');
+  if (el) el.style.display = on ? 'block' : 'none';
 }
+
 async function savePackage(pkg) {
-const { id, ...data } = pkg;
-await packagesCol.doc(id).set(data);
+  const { id, ...data } = pkg;
+  await packagesCol.doc(id).set(data);
 }
+
 async function updatePackage(id, fields) {
-await packagesCol.doc(id).update(fields);
+  await packagesCol.doc(id).update(fields);
 }
+
 // =====================
 // UTILS
 // =====================
 function genId() {
-return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
+  return Date.now().toString(36) + Math.random().toString(36).substr(2, 5);
 }
+
 function formatDateTime(isoStr) {
-if (!isoStr) return '—';
-const d = new Date(isoStr);
-return d.toLocaleDateString('pt-BR') + ' às ' + d.toLocaleTimeString('pt-BR',
-{hour:'2-digit',minute:'2-digit'});
+  if (!isoStr) return '—';
+  const d = new Date(isoStr);
+  return d.toLocaleDateString('pt-BR') + ' às ' + d.toLocaleTimeString('pt-BR', {hour:'2-digit',minute:'2-digit'});
 }
+
 function formatDate(isoStr) {
-if (!isoStr) return '—';
-return new Date(isoStr).toLocaleDateString('pt-BR');
+  if (!isoStr) return '—';
+  return new Date(isoStr).toLocaleDateString('pt-BR');
 }
+
 function todayStr() {
-return new Date().toLocaleDateString('pt-BR');
+  return new Date().toLocaleDateString('pt-BR');
 }
+
 function getMonthKey(isoStr) {
-const d = new Date(isoStr);
-return d.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
+  const d = new Date(isoStr);
+  return d.toLocaleDateString('pt-BR', {month:'long', year:'numeric'});
 }
+
 function carrierClass(carrier) {
-const map = {
-'Correios': 'carrier-correios',
-'Mercado Livre': 'carrier-mercadolivre',
-'Shopee': 'carrier-shopee',
-'Jadlog': 'carrier-jadlog',
-'Amazon': 'carrier-amazon',
-};
-return map[carrier] || '';
+  const map = {
+    'Correios': 'carrier-correios',
+    'Mercado Livre': 'carrier-mercadolivre',
+    'Shopee': 'carrier-shopee',
+    'Jadlog': 'carrier-jadlog',
+    'Amazon': 'carrier-amazon',
+  };
+  return map[carrier] || '';
 }
+
 function carrierEmoji(carrier) {
-const map = {
-'Correios': '🟡',
-'Mercado Livre': '🛒',
-'Shopee': '🟠',
-'Jadlog': '🟣',
-'Amazon': '📦',
-'Outro': '🚚',
-};
-return map[carrier] || '🚚';
+  const map = {
+    'Correios': '🟡',
+    'Mercado Livre': '🛒',
+    'Shopee': '🟠',
+    'Jadlog': '🟣',
+    'Amazon': '📦',
+    'Outro': '🚚',
+  };
+  return map[carrier] || '🚚';
 }
+
 function showToast(msg, type = 'success') {
-const t = document.getElementById('toast');
-t.textContent = msg;
-t.className = 'toast ' + type + ' show';
-setTimeout(() => t.className = 'toast', 3000);
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + type + ' show';
+  setTimeout(() => t.className = 'toast', 3000);
 }
+
 // =====================
 // NAVIGATION
 // =====================
 function showScreen(name) {
-  document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
-  document.querySelectorAll(".nav-btn").forEach(b => b.classList.remove("active"));
-  const screen = document.getElementById("screen-" + name);
-  if (screen) screen.classList.add("active");
-  const nb = document.getElementById("nav-" + name);
-  if (nb) nb.classList.add("active");
-  if (name !== "copies-out") { selCopies.clear(); updateSendBar(); }
-  if (name === "copies-out") renderCopiesOut();
-  else if (name === "copies-stock") renderCopiesStock();
-  else if (name === "copies-history") renderCopiesHistory();
-  else if (name === "register") updateDateTimeDisplay();
-  if (name === "stock") renderStock();
-  if (name === "history") { buildMonthFilters(); renderHistory(); }
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+
+  if (name === 'stock') renderStock();
+  if (name === 'history') { buildMonthFilters(); renderHistory(); }
+  if (name === 'register') updateDateTimeDisplay();
   updateStats();
 }
+
 // =====================
 // DATE/TIME UPDATE
 // =====================
 function updateDateTimeDisplay() {
-const el = document.getElementById('arrivalDateTime');
-if (el) {
-const now = new Date();
-el.textContent = now.toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit',
-month:'long', year:'numeric'})
-+ ' · ' + now.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-}
+  const el = document.getElementById('arrivalDateTime');
+  if (el) {
+    const now = new Date();
+    el.textContent = now.toLocaleDateString('pt-BR', {weekday:'long', day:'2-digit', month:'long', year:'numeric'})
+      + ' · ' + now.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+  }
 }
 setInterval(updateDateTimeDisplay, 10000);
 updateDateTimeDisplay();
+
 // =====================
 // PHOTO
 // =====================
 function handlePhoto(input) {
-const file = input.files[0];
-if (!file) return;
-const reader = new FileReader();
-reader.onload = (e) => {
-capturedPhoto = e.target.result;
-const area = document.getElementById('photoArea');
-const placeholder = document.getElementById('photoPlaceholder');
-const overlay = document.getElementById('photoOverlay');
-area.classList.add('has-photo');
-placeholder.style.display = 'none';
-overlay.style.display = 'block';
-// Remove old img
-const old = area.querySelector('img');
-if (old) old.remove();
-const img = document.createElement('img');
-img.src = capturedPhoto;
-area.insertBefore(img, overlay);
-};
-reader.readAsDataURL(file);
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    capturedPhoto = e.target.result;
+    const area = document.getElementById('photoArea');
+    const placeholder = document.getElementById('photoPlaceholder');
+    const overlay = document.getElementById('photoOverlay');
+    area.classList.add('has-photo');
+    placeholder.style.display = 'none';
+    overlay.style.display = 'block';
+    // Remove old img
+    const old = area.querySelector('img');
+    if (old) old.remove();
+    const img = document.createElement('img');
+    img.src = capturedPhoto;
+    area.insertBefore(img, overlay);
+  };
+  reader.readAsDataURL(file);
 }
+
 // =====================
 // CARRIER SELECT
 // =====================
 function selectCarrier(el) {
-document.querySelectorAll('.carrier-opt').forEach(o => o.classList.remove('selected'));
-el.classList.add('selected');
-selectedCarrier = el.dataset.carrier;
+  document.querySelectorAll('.carrier-opt').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedCarrier = el.dataset.carrier;
 }
+
 // =====================
 // SCAN WITH CAMERA (html5-qrcode)
 // =====================
 let html5Scanner = null;
+
 function setScanStatus(msg) {
-document.getElementById('scanStatusMsg').textContent = msg;
+  document.getElementById('scanStatusMsg').textContent = msg;
 }
+
 async function triggerScan(targetId) {
-scanTarget = targetId;
-document.getElementById('scanInput').value = '';
-setScanStatus('Iniciando câmera...');
-document.getElementById('modal-scan').classList.add('open');
-// Small delay so modal animates in before camera starts
-setTimeout(() => startHtml5Scanner(), 300);
+  scanTarget = targetId;
+  document.getElementById('scanInput').value = '';
+  setScanStatus('Iniciando câmera...');
+  document.getElementById('modal-scan').classList.add('open');
+
+  // Small delay so modal animates in before camera starts
+  setTimeout(() => startHtml5Scanner(), 300);
 }
+
 function startHtml5Scanner() {
-if (typeof Html5Qrcode === 'undefined') {
-setScanStatus('⚠ Biblioteca não carregada. Use o campo manual abaixo.');
-return;
+  if (typeof Html5Qrcode === 'undefined') {
+    setScanStatus('⚠️ Biblioteca não carregada. Use o campo manual abaixo.');
+    return;
+  }
+
+  // Clean up any previous instance
+  stopScanner().then(() => {
+    try {
+      html5Scanner = new Html5Qrcode('qr-reader', { verbose: false });
+
+      const config = {
+        fps: 15,
+        qrbox: { width: 260, height: 100 },  // Wide box = ideal for barcodes
+        aspectRatio: 1.7,
+        formatsToSupport: [
+          Html5QrcodeSupportedFormats.CODE_128,
+          Html5QrcodeSupportedFormats.CODE_39,
+          Html5QrcodeSupportedFormats.EAN_13,
+          Html5QrcodeSupportedFormats.EAN_8,
+          Html5QrcodeSupportedFormats.QR_CODE,
+          Html5QrcodeSupportedFormats.DATA_MATRIX,
+          Html5QrcodeSupportedFormats.ITF,
+          Html5QrcodeSupportedFormats.AZTEC,
+        ]
+      };
+
+      html5Scanner.start(
+        { facingMode: 'environment' },  // Rear camera
+        config,
+        (decodedText) => {
+          // SUCCESS
+          if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
+          document.getElementById('scanInput').value = decodedText;
+          setScanStatus('✅ Código lido: ' + decodedText);
+          setTimeout(() => confirmScan(), 600);
+        },
+        (errorMsg) => {
+          // scanning frame — ignore per-frame errors
+        }
+      ).then(() => {
+        setScanStatus('🎯 Aponte para o código de barras da etiqueta');
+      }).catch((err) => {
+        handleScanError(err);
+      });
+
+    } catch(e) {
+      handleScanError(e);
+    }
+  });
 }
-// Clean up any previous instance
-stopScanner().then(() => {
-try {
-html5Scanner = new Html5Qrcode('qr-reader', { verbose: false });
-const config = {
-fps: 15,
-qrbox: { width: 260, height: 100 }, // Wide box = ideal for barcodes
-aspectRatio: 1.7,
-formatsToSupport: [
-Html5QrcodeSupportedFormats.CODE_128,
-Html5QrcodeSupportedFormats.CODE_39,
-Html5QrcodeSupportedFormats.EAN_13,
-Html5QrcodeSupportedFormats.EAN_8,
-Html5QrcodeSupportedFormats.QR_CODE,
-Html5QrcodeSupportedFormats.DATA_MATRIX,
-Html5QrcodeSupportedFormats.ITF,
-Html5QrcodeSupportedFormats.AZTEC,
-]
-};
-html5Scanner.start(
-{ facingMode: 'environment' }, // Rear camera
-config,
-(decodedText) => {
-// SUCCESS
-if (navigator.vibrate) navigator.vibrate([80, 40, 80]);
-document.getElementById('scanInput').value = decodedText;
-setScanStatus('✅ Código lido: ' + decodedText);
-setTimeout(() => confirmScan(), 600);
-},
-(errorMsg) => {
-// scanning frame — ignore per-frame errors
-}
-).then(() => {
-setScanStatus('🎯 Aponte para o código de barras da etiqueta');
-}).catch((err) => {
-handleScanError(err);
-});
-} catch(e) {
-handleScanError(e);
-}
-});
-}
+
 function handleScanError(err) {
-const msg = (err && err.message) ? err.message : String(err);
-if (/permission|denied|allow/i.test(msg)) {
-setScanStatus('🚫 Permissão de câmera negada. Vá em Configurações do navegador e permita o acesso à câmera, depois tente novamente.');
-} else if (/https|secure/i.test(msg)) {
-setScanStatus('🔒 A câmera requer HTTPS. Use o campo manual abaixo.');
-} else {
-setScanStatus('⚠ Câmera indisponível. Use o campo manual abaixo.');
+  const msg = (err && err.message) ? err.message : String(err);
+  if (/permission|denied|allow/i.test(msg)) {
+    setScanStatus('🚫 Permissão de câmera negada. Vá em Configurações do navegador e permita o acesso à câmera, depois tente novamente.');
+  } else if (/https|secure/i.test(msg)) {
+    setScanStatus('🔒 A câmera requer HTTPS. Use o campo manual abaixo.');
+  } else {
+    setScanStatus('⚠️ Câmera indisponível. Use o campo manual abaixo.');
+  }
 }
-}
+
 function stopScanner() {
-if (html5Scanner) {
-return html5Scanner.stop().catch(() => {}).then(() => {
-try { html5Scanner.clear(); } catch(e) {}
-html5Scanner = null;
-});
+  if (html5Scanner) {
+    return html5Scanner.stop().catch(() => {}).then(() => {
+      try { html5Scanner.clear(); } catch(e) {}
+      html5Scanner = null;
+    });
+  }
+  return Promise.resolve();
 }
-return Promise.resolve();
-}
+
 function confirmScan() {
-const val = document.getElementById('scanInput').value.trim();
-if (!val) { setScanStatus('⚠ Nenhum código detectado. Tente novamente.'); return; }
-stopScanner().then(() => {
-document.getElementById(scanTarget).value = val;
-if (scanTarget === 'stockSearch') renderStock();
-closeScan();
-});
+  const val = document.getElementById('scanInput').value.trim();
+  if (!val) { setScanStatus('⚠️ Nenhum código detectado. Tente novamente.'); return; }
+  stopScanner().then(() => {
+    document.getElementById(scanTarget).value = val;
+    if (scanTarget === 'stockSearch') renderStock();
+    closeScan();
+  });
 }
+
 function closeScan() {
-stopScanner().then(() => {
-document.getElementById('modal-scan').classList.remove('open');
-setScanStatus('');
-});
+  stopScanner().then(() => {
+    document.getElementById('modal-scan').classList.remove('open');
+    setScanStatus('');
+  });
 }
+
 document.getElementById('scanInput').addEventListener('keydown', (e) => {
-if (e.key === 'Enter') confirmScan();
+  if (e.key === 'Enter') confirmScan();
 });
+
 // =====================
 // PHOTO COMPRESSION
 // =====================
 function compressPhoto(dataUrl, maxWidth, quality) {
-return new Promise((resolve) => {
-const img = new Image();
-img.onload = () => {
-const canvas = document.createElement('canvas');
-let w = img.width, h = img.height;
-if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
-canvas.width = w; canvas.height = h;
-canvas.getContext('2d').drawImage(img, 0, 0, w, h);
-resolve(canvas.toDataURL('image/jpeg', quality));
-};
-img.src = dataUrl;
-});
+  return new Promise((resolve) => {
+    const img = new Image();
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let w = img.width, h = img.height;
+      if (w > maxWidth) { h = Math.round(h * maxWidth / w); w = maxWidth; }
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      resolve(canvas.toDataURL('image/jpeg', quality));
+    };
+    img.src = dataUrl;
+  });
 }
+
 // =====================
 // REGISTER PACKAGE
 // =====================
 // registerPackage defined below
+
 function resetForm() {
-document.getElementById('trackingCode').value = '';
-document.getElementById('recipientName').value = '';
-document.getElementById('recipientRoom').value = '';
-capturedPhoto = null;
-selectedCarrier = '';
-document.querySelectorAll('.carrier-opt').forEach(o => o.classList.remove('selected'));
-const area = document.getElementById('photoArea');
-const old = area.querySelector('img');
-if (old) old.remove();
-area.classList.remove('has-photo');
-document.getElementById('photoPlaceholder').style.display = 'flex';
-document.getElementById('photoOverlay').style.display = 'none';
-document.getElementById('photoInput').value = '';
-updateDateTimeDisplay();
+  document.getElementById('trackingCode').value = '';
+  document.getElementById('recipientName').value = '';
+  document.getElementById('recipientRoom').value = '';
+  capturedPhoto = null;
+  selectedCarrier = '';
+  document.querySelectorAll('.carrier-opt').forEach(o => o.classList.remove('selected'));
+
+  const area = document.getElementById('photoArea');
+  const old = area.querySelector('img');
+  if (old) old.remove();
+  area.classList.remove('has-photo');
+  document.getElementById('photoPlaceholder').style.display = 'flex';
+  document.getElementById('photoOverlay').style.display = 'none';
+  document.getElementById('photoInput').value = '';
+  updateDateTimeDisplay();
 }
+
 // =====================
 // STATS
 // =====================
 function updateStats() {
-const inStock = packages.filter(p => p.status === 'Em Estoque');
-const delivered = packages.filter(p => p.status === 'Entregue');
-const todayIn = inStock.filter(p => formatDate(p.arrivalDate) === todayStr());
-const inCopies = packages.filter(p => p.status === 'No Setor de Cópias');
-const alunoStock = packages.filter(p => p.status === 'Em Estoque' && p.recipientType ===
-'Aluno');
-const today = new Date().toLocaleDateString('pt-BR');
-const copiesToday = inCopies.filter(p => p.sentToCopiesDate && new
-Date(p.sentToCopiesDate).toLocaleDateString('pt-BR') === today);
-document.getElementById('statStock').textContent = inStock.length;
-document.getElementById('statToday').textContent = todayIn.length;
-document.getElementById('statDelivered').textContent = delivered.length;
-document.getElementById('statTotal').textContent = packages.length;
-document.getElementById('headerCount').textContent = inStock.length + ' em estoque';
-document.getElementById('stockSubtitle').textContent =
-inStock.length === 0 ? 'Nenhuma encomenda aguardando' :
-inStock.length === 1 ? '1 encomenda aguardando retirada' :
-inStock.length + ' encomendas aguardando retirada';
-// Copies stats
-const el1 = document.getElementById('statInCopies'); if(el1) el1.textContent =
-inCopies.length;
-const el2 = document.getElementById('statAlunoStock'); if(el2) el2.textContent =
-alunoStock.length;
-const el3 = document.getElementById('statCopiesWaiting'); if(el3) el3.textContent =
-inCopies.length;
-const el4 = document.getElementById('statCopiesToday'); if(el4) el4.textContent =
-copiesToday.length;
+  const inStock = packages.filter(p => p.status === 'Em Estoque');
+  const delivered = packages.filter(p => p.status === 'Entregue');
+  const todayIn = inStock.filter(p => formatDate(p.arrivalDate) === todayStr());
+  const inCopies = packages.filter(p => p.status === 'No Setor de Cópias');
+  const alunoStock = packages.filter(p => p.status === 'Em Estoque' && p.recipientType === 'Aluno');
+  const today = new Date().toLocaleDateString('pt-BR');
+  const copiesToday = inCopies.filter(p => p.sentToCopiesDate && new Date(p.sentToCopiesDate).toLocaleDateString('pt-BR') === today);
+
+  document.getElementById('statStock').textContent = inStock.length;
+  document.getElementById('statToday').textContent = todayIn.length;
+  document.getElementById('statDelivered').textContent = delivered.length;
+  document.getElementById('statTotal').textContent = packages.length;
+  document.getElementById('headerCount').textContent = inStock.length + ' em estoque';
+  document.getElementById('stockSubtitle').textContent =
+    inStock.length === 0 ? 'Nenhuma encomenda aguardando' :
+    inStock.length === 1 ? '1 encomenda aguardando retirada' :
+    inStock.length + ' encomendas aguardando retirada';
+
+  // Copies stats
+  const el1 = document.getElementById('statInCopies'); if(el1) el1.textContent = inCopies.length;
+  const el2 = document.getElementById('statAlunoStock'); if(el2) el2.textContent = alunoStock.length;
+  const el3 = document.getElementById('statCopiesWaiting'); if(el3) el3.textContent = inCopies.length;
+  const el4 = document.getElementById('statCopiesToday'); if(el4) el4.textContent = copiesToday.length;
 }
+
 // =====================
 // RENDER STOCK
 // =====================
 function renderStock() {
-const search = (document.getElementById('stockSearch').value || '').toLowerCase();
-const list = packages.filter(p => p.status === 'Em Estoque').filter(p => {
-if (!search) return true;
-return p.recipient.toLowerCase().includes(search) ||
-cleanTracking(p.trackingCode).toLowerCase().includes(search) ||
-(p.room || '').toLowerCase().includes(search);
-});
-const el = document.getElementById('stockList');
-if (list.length === 0) {
-el.innerHTML = `<div class="empty"><div class="empty-icon">📭</div><h3>Nenhuma
-encomenda em estoque</h3><p>Registre a chegada de encomendas na aba
-"Registrar"</p></div>`;
-return;
+  const search = (document.getElementById('stockSearch').value || '').toLowerCase();
+  const list = packages.filter(p => p.status === 'Em Estoque').filter(p => {
+    if (!search) return true;
+    return p.recipient.toLowerCase().includes(search) ||
+           cleanTracking(p.trackingCode).toLowerCase().includes(search) ||
+           (p.room || '').toLowerCase().includes(search);
+  });
+
+  const el = document.getElementById('stockList');
+  if (list.length === 0) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">📭</div><h3>Nenhuma encomenda em estoque</h3><p>Registre a chegada de encomendas na aba "Registrar"</p></div>`;
+    return;
+  }
+
+  el.innerHTML = list.map(pkg => pkgCardHTML(pkg, false)).join('');
 }
-el.innerHTML = list.map(pkg => pkgCardHTML(pkg, false)).join('');
-}
+
 // =====================
 // RENDER HISTORY
 // =====================
 function buildMonthFilters() {
-const delivered = packages.filter(p => p.status === 'Entregue');
-const months = [...new Set(delivered.map(p => getMonthKey(p.arrivalDate)))];
-const el = document.getElementById('monthFilters');
-if (months.length === 0) { el.innerHTML = ''; return; }
-el.innerHTML = `<div class="filter-chip ${!activeMonthFilter ? 'active' : ''}"
-onclick="setMonthFilter(null, this)">Todos</div>` +
-months.map(m => `<div class="filter-chip ${activeMonthFilter === m ? 'active' : ''}"
-onclick="setMonthFilter('${m}', this)">${m}</div>`).join('');
+  const delivered = packages.filter(p => p.status === 'Entregue');
+  const months = [...new Set(delivered.map(p => getMonthKey(p.arrivalDate)))];
+  const el = document.getElementById('monthFilters');
+  if (months.length === 0) { el.innerHTML = ''; return; }
+  el.innerHTML = `<div class="filter-chip ${!activeMonthFilter ? 'active' : ''}" onclick="setMonthFilter(null, this)">Todos</div>` +
+    months.map(m => `<div class="filter-chip ${activeMonthFilter === m ? 'active' : ''}" onclick="setMonthFilter('${m}', this)">${m}</div>`).join('');
 }
+
 function setMonthFilter(month, el) {
-activeMonthFilter = month;
-document.querySelectorAll('#monthFilters .filter-chip').forEach(c =>
-c.classList.remove('active'));
-el.classList.add('active');
-renderHistory();
+  activeMonthFilter = month;
+  document.querySelectorAll('#monthFilters .filter-chip').forEach(c => c.classList.remove('active'));
+  el.classList.add('active');
+  renderHistory();
 }
+
 function renderHistory() {
-const search = (document.getElementById('historySearch').value || '').toLowerCase();
-let list = packages.filter(p => p.status === 'Entregue');
-if (activeMonthFilter) list = list.filter(p => getMonthKey(p.arrivalDate) === activeMonthFilter);
-if (search) list = list.filter(p =>
-p.recipient.toLowerCase().includes(search) ||
-cleanTracking(p.trackingCode).toLowerCase().includes(search) ||
-(p.withdrawnBy || '').toLowerCase().includes(search)
-);
-list = list.slice().reverse();
-const el = document.getElementById('historyList');
-if (list.length === 0) {
-el.innerHTML = `<div class="empty"><div class="empty-icon">🗂</div><h3>Nenhum
-histórico encontrado</h3><p>As encomendas entregues aparecerão aqui</p></div>`;
-return;
+  const search = (document.getElementById('historySearch').value || '').toLowerCase();
+  let list = packages.filter(p => p.status === 'Entregue');
+  if (activeMonthFilter) list = list.filter(p => getMonthKey(p.arrivalDate) === activeMonthFilter);
+  if (search) list = list.filter(p =>
+    p.recipient.toLowerCase().includes(search) ||
+    cleanTracking(p.trackingCode).toLowerCase().includes(search) ||
+    (p.withdrawnBy || '').toLowerCase().includes(search)
+  );
+  list = list.slice().reverse();
+
+  const el = document.getElementById('historyList');
+  if (list.length === 0) {
+    el.innerHTML = `<div class="empty"><div class="empty-icon">🗂️</div><h3>Nenhum histórico encontrado</h3><p>As encomendas entregues aparecerão aqui</p></div>`;
+    return;
+  }
+  el.innerHTML = list.map(pkg => pkgCardHTML(pkg, true)).join('');
 }
-el.innerHTML = list.map(pkg => pkgCardHTML(pkg, true)).join('');
-}
+
 function pkgCardHTML(pkg, isHistory) {
-const thumb = pkg.photo
-? `<div class="pkg-thumb"><img src="${pkg.photo}" alt="foto"></div>`
-: `<div class="pkg-thumb">📦</div>`;
-const carrierBadge = `<span class="badge badge-carrier
-${carrierClass(pkg.carrier)}">${carrierEmoji(pkg.carrier)} ${pkg.carrier}</span>`;
-const statusBadge = isHistory
-? `<span class="badge badge-delivered">✓ Entregue</span>`
-: `<span class="badge badge-stock">⏳ Em Estoque</span>`;
-const meta = isHistory
-? `<span>Retirado por: <b>${pkg.withdrawnBy || '—'}</b></span>`
-: `<span>${pkg.room || 'Setor não inf.'}</span>`;
-return `
-<div class="pkg-card ${isHistory ? 'delivered' : ''}" onclick="openDetail('${pkg.id}')">
-${thumb}
-<div class="pkg-info">
-<div class="pkg-name">${pkg.recipient}</div>
-<div class="pkg-meta">
-${meta}
-<span>${isHistory ? formatDate(pkg.withdrawalDate) :
-formatDateTime(pkg.arrivalDate)}</span>
-</div>
-<div class="pkg-track">${cleanTracking(pkg.trackingCode)}</div>
-<div class="pkg-badges">
-${carrierBadge}
-${statusBadge}
-</div>
-</div>
-</div>`;
+  const thumb = pkg.photo
+    ? `<div class="pkg-thumb"><img src="${pkg.photo}" alt="foto"></div>`
+    : `<div class="pkg-thumb">📦</div>`;
+
+  const carrierBadge = `<span class="badge badge-carrier ${carrierClass(pkg.carrier)}">${carrierEmoji(pkg.carrier)} ${pkg.carrier}</span>`;
+  const statusBadge = isHistory
+    ? `<span class="badge badge-delivered">✓ Entregue</span>`
+    : `<span class="badge badge-stock">⏳ Em Estoque</span>`;
+
+  const meta = isHistory
+    ? `<span>Retirado por: <b>${pkg.withdrawnBy || '—'}</b></span>`
+    : `<span>${pkg.room || 'Setor não inf.'}</span>`;
+
+  return `
+    <div class="pkg-card ${isHistory ? 'delivered' : ''}" onclick="openDetail('${pkg.id}')">
+      ${thumb}
+      <div class="pkg-info">
+        <div class="pkg-name">${pkg.recipient}</div>
+        <div class="pkg-meta">
+          ${meta}
+          <span>${isHistory ? formatDate(pkg.withdrawalDate) : formatDateTime(pkg.arrivalDate)}</span>
+        </div>
+        <div class="pkg-track">${cleanTracking(pkg.trackingCode)}</div>
+        <div class="pkg-badges">
+          ${carrierBadge}
+          ${statusBadge}
+        </div>
+      </div>
+    </div>`;
 }
+
 // =====================
 // MODAL DETAIL
 // =====================
 function openDetail(id) {
-const pkg = packages.find(p => p.id === id);
-if (!pkg) return;
-currentPackageId = id;
-document.getElementById('modalTitle').textContent = pkg.recipient;
-document.getElementById('modalSub').textContent = pkg.room || 'Setor não informado';
-// Photo
-const photoEl = document.getElementById('modalPhoto');
-if (pkg.photo) {
-photoEl.innerHTML = `<img src="${pkg.photo}" alt="foto da encomenda">`;
-} else {
-photoEl.innerHTML = '📦';
+  const pkg = packages.find(p => p.id === id);
+  if (!pkg) return;
+  currentPackageId = id;
+
+  document.getElementById('modalTitle').textContent = pkg.recipient;
+  document.getElementById('modalSub').textContent = pkg.room || 'Setor não informado';
+
+  // Photo
+  const photoEl = document.getElementById('modalPhoto');
+  if (pkg.photo) {
+    photoEl.innerHTML = `<img src="${pkg.photo}" alt="foto da encomenda">`;
+  } else {
+    photoEl.innerHTML = '📦';
+  }
+
+  // Details
+  const rows = [
+    ['Transportadora', `${carrierEmoji(pkg.carrier)} ${pkg.carrier}`],
+    ['Rastreio', pkg.trackingCode],
+    ['Chegada', formatDateTime(pkg.arrivalDate)],
+    ['Status', pkg.status === 'Em Estoque' ? '⏳ Em Estoque' : '✅ Entregue'],
+    ...(pkg.status === 'Entregue' ? [
+      ['Retirado por', pkg.withdrawnBy],
+      ['Data de Retirada', formatDateTime(pkg.withdrawalDate)],
+    ] : [])
+  ];
+
+  document.getElementById('modalDetails').innerHTML =
+    rows.map(([k,v]) => `<div class="detail-row"><span class="detail-key">${k}</span><span class="detail-val">${v}</span></div>`).join('');
+
+  // Delivery section
+  const deliverySection = document.getElementById('modalDeliverySection');
+  if (pkg.status === 'Em Estoque') {
+    deliverySection.style.display = 'block';
+    document.getElementById('withdrawName').value = '';
+  } else {
+    deliverySection.style.display = 'none';
+  }
+
+  document.getElementById('modal-detail').classList.add('open');
 }
-// Details
-const rows = [
-['Transportadora', `${carrierEmoji(pkg.carrier)} ${pkg.carrier}`],
-['Rastreio', pkg.trackingCode],
-['Chegada', formatDateTime(pkg.arrivalDate)],
-['Status', pkg.status === 'Em Estoque' ? '⏳ Em Estoque' : '✅ Entregue'],
-...(pkg.status === 'Entregue' ? [
-['Retirado por', pkg.withdrawnBy],
-['Data de Retirada', formatDateTime(pkg.withdrawalDate)],
-] : [])
-];
-document.getElementById('modalDetails').innerHTML =
-rows.map(([k,v]) => `<div class="detail-row"><span class="detail-key">${k}</span><span
-class="detail-val">${v}</span></div>`).join('');
-// Delivery section
-const deliverySection = document.getElementById('modalDeliverySection');
-if (pkg.status === 'Em Estoque') {
-deliverySection.style.display = 'block';
-document.getElementById('withdrawName').value = '';
-} else {
-deliverySection.style.display = 'none';
-}
-document.getElementById('modal-detail').classList.add('open');
-}
+
 function closeModal() {
-document.getElementById('modal-detail').classList.remove('open');
-currentPackageId = null;
+  document.getElementById('modal-detail').classList.remove('open');
+  currentPackageId = null;
 }
+
 let _confirmingDelivery = false;
 async function confirmDelivery() {
-if (_confirmingDelivery) return;
-const name = document.getElementById('withdrawName').value.trim();
-if (!name) { showToast('⚠ Informe o nome de quem retirou', 'error'); return; }
-_confirmingDelivery = true;
-const btn = document.querySelector('#modalDeliverySection .btn-success');
-btn.textContent = '⏳ Salvando...';
-btn.disabled = true;
-btn.style.opacity = '0.7';
-try {
-await packagesCol.doc(currentPackageId).update({
-status: 'Entregue',
-withdrawnBy: name,
-withdrawalDate: new Date().toISOString(),
-});
-showToast('✅ Retirada registrada para ' + name);
-closeModal();
-} catch(e) {
-showToast('❌ Erro ao salvar. Verifique a conexão.', 'error');
-btn.textContent = '✅ Confirmar Retirada';
-btn.disabled = false;
-btn.style.opacity = '1';
-} finally {
-_confirmingDelivery = false;
+  if (_confirmingDelivery) return;
+  const name = document.getElementById('withdrawName').value.trim();
+  if (!name) { showToast('⚠️ Informe o nome de quem retirou', 'error'); return; }
+  _confirmingDelivery = true;
+  const btn = document.querySelector('#modalDeliverySection .btn-success');
+  btn.textContent = '⏳ Salvando...';
+  btn.disabled = true;
+  btn.style.opacity = '0.7';
+  try {
+    await packagesCol.doc(currentPackageId).update({
+      status: 'Entregue',
+      withdrawnBy: name,
+      withdrawalDate: new Date().toISOString(),
+    });
+    showToast('✅ Retirada registrada para ' + name);
+    closeModal();
+  } catch(e) {
+    showToast('❌ Erro ao salvar. Verifique a conexão.', 'error');
+    btn.textContent = '✅ Confirmar Retirada';
+    btn.disabled = false;
+    btn.style.opacity = '1';
+  } finally {
+    _confirmingDelivery = false;
+  }
 }
-}
+
 // Close modals on overlay click
 document.getElementById('modal-detail').addEventListener('click', function(e) {
-if (e.target === this) closeModal();
+  if (e.target === this) closeModal();
 });
 document.getElementById('modal-scan').addEventListener('click', function(e) {
-if (e.target === this) closeScan();
+  if (e.target === this) closeScan();
 });
+
 // =====================
 // RECIPIENT TYPE
 // =====================
 let selRtypeVal = '';
 function selRtype(el) {
-document.querySelectorAll('[data-rt]').forEach(o => o.classList.remove('selected'));
-el.classList.add('selected');
-selRtypeVal = el.dataset.rt;
+  document.querySelectorAll('[data-rt]').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+  selRtypeVal = el.dataset.rt;
 }
+
 // =====================
 // MODE
 // =====================
 let appMode = 'portaria';
 let selCopies = new Set();
+
 function setMode(m) {
-appMode = m;
-document.getElementById('modePortaria').style.background = m==='portaria' ?
-'var(--surface3)' : 'transparent';
-document.getElementById('modePortaria').style.color = m==='portaria' ? 'var(--accent)' :
-'var(--text2)';
-document.getElementById('modeCopias').style.background = m==='copias' ?
-'var(--surface3)' : 'transparent';
-document.getElementById('modeCopias').style.color = m==='copias' ? '#c07aff' :
-'var(--text2)';
-document.getElementById('navPortaria').style.display = m==='portaria' ? 'flex' : 'none';
-document.getElementById('navCopias').style.display = m==='copias' ? 'flex' : 'none';
-if (m==='portaria') showScreen('register');
-else showScreen('copies-stock');
+  appMode = m;
+  document.getElementById('modePortaria').style.background = m==='portaria' ? 'var(--surface3)' : 'transparent';
+  document.getElementById('modePortaria').style.color = m==='portaria' ? 'var(--accent)' : 'var(--text2)';
+  document.getElementById('modeCopias').style.background = m==='copias' ? 'var(--surface3)' : 'transparent';
+  document.getElementById('modeCopias').style.color = m==='copias' ? '#c07aff' : 'var(--text2)';
+  document.getElementById('navPortaria').style.display = m==='portaria' ? 'flex' : 'none';
+  document.getElementById('navCopias').style.display = m==='copias' ? 'flex' : 'none';
+  if (m==='portaria') showScreen('register');
+  else showScreen('copies-stock');
 }
+
+const _origShowScreen = showScreen;
+function showScreen(name) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  const screen = document.getElementById('screen-' + name);
+  if (screen) screen.classList.add('active');
+  const nb = document.getElementById('nav-' + name);
+  if (nb) nb.classList.add('active');
+  if (name !== 'copies-out') { selCopies.clear(); updateSendBar(); }
+  if (name === 'copies-out') renderCopiesOut();
+  else if (name === 'copies-stock') renderCopiesStock();
+  else if (name === 'copies-history') renderCopiesHistory();
+  else if (name === 'register') updateDateTimeDisplay();
+  updateStats();
+}
+
 // =====================
 // OVERRIDE registerPackage
 // =====================
 async function registerPackage() {
-const recipient = document.getElementById('recipientName').value.trim();
-const room = document.getElementById('recipientRoom').value.trim();
-const obs = document.getElementById('obsField') ?
-document.getElementById('obsField').value.trim() : '';
-if (!recipient) { showToast('⚠ Informe o nome do destinatário', 'error'); return; }
-if (!selectedCarrier) { showToast('⚠ Selecione a transportadora', 'error'); return; }
-if (!selRtypeVal) { showToast('⚠ Selecione o tipo de destinatário', 'error'); return; }
-const btns = document.querySelectorAll('[onclick="registerPackage()"]');
-btns.forEach(b => { b.textContent = '⏳ Salvando...'; b.disabled = true; });
-try {
-let photoData = null;
-if (capturedPhoto) photoData = await compressPhoto(capturedPhoto, 600, 0.6);
-await packagesCol.add({
-photo: photoData,
-trackingCode: document.getElementById('trackingCode').value.trim() || '(sem rastreio)',
-carrier: selectedCarrier,
-recipient, room,
-observation: obs || null,
-recipientType: selRtypeVal,
-arrivalDate: new Date().toISOString(),
-status: 'Em Estoque',
-withdrawnBy: null, withdrawalDate: null,
-sentToCopiesDate: null, deliveredInCopiesBy: null, deliveredInCopiesDate: null,
-});
-if (batchMode) {
-// Batch mode: clear only photo and tracking, keep everything else
-document.getElementById('trackingCode').value = '';
-capturedPhoto = null;
-const area = document.getElementById('photoArea');
-const oldImg = area.querySelector('img'); if (oldImg) oldImg.remove();
-area.classList.remove('has-photo');
-document.getElementById('photoPlaceholder').style.display = 'flex';
-document.getElementById('photoOverlay').style.display = 'none';
-document.getElementById('photoInput').value = '';
-showToast('✅ Salvo! Próxima encomenda — troque foto e rastreio');
-} else {
-// Normal mode: clear everything
-document.getElementById('trackingCode').value = '';
-document.getElementById('recipientName').value = '';
-document.getElementById('recipientRoom').value = '';
-if (document.getElementById('obsField')) document.getElementById('obsField').value = '';
-capturedPhoto = null; selectedCarrier = ''; selRtypeVal = '';
-document.querySelectorAll('.carrier-opt').forEach(o => o.classList.remove('selected'));
-document.querySelectorAll('[data-rt]').forEach(o => o.classList.remove('selected'));
-const area = document.getElementById('photoArea');
-const oldImg = area.querySelector('img'); if (oldImg) oldImg.remove();
-area.classList.remove('has-photo');
-document.getElementById('photoPlaceholder').style.display = 'flex';
-document.getElementById('photoOverlay').style.display = 'none';
-document.getElementById('photoInput').value = '';
-updateDateTimeDisplay();
-showToast('✅ Encomenda registrada com sucesso!');
+  const recipient = document.getElementById('recipientName').value.trim();
+  const room = document.getElementById('recipientRoom').value.trim();
+  const obs = document.getElementById('obsField') ? document.getElementById('obsField').value.trim() : '';
+  if (!recipient) { showToast('⚠️ Informe o nome do destinatário', 'error'); return; }
+  if (!selectedCarrier) { showToast('⚠️ Selecione a transportadora', 'error'); return; }
+  if (!selRtypeVal) { showToast('⚠️ Selecione o tipo de destinatário', 'error'); return; }
+  const btns = document.querySelectorAll('[onclick="registerPackage()"]');
+  btns.forEach(b => { b.textContent = '⏳ Salvando...'; b.disabled = true; });
+  try {
+    let photoData = null;
+    if (capturedPhoto) photoData = await compressPhoto(capturedPhoto, 600, 0.6);
+    await packagesCol.add({
+      photo: photoData,
+      trackingCode: document.getElementById('trackingCode').value.trim() || '(sem rastreio)',
+      carrier: selectedCarrier,
+      recipient, room,
+      observation: obs || null,
+      recipientType: selRtypeVal,
+      arrivalDate: new Date().toISOString(),
+      status: 'Em Estoque',
+      withdrawnBy: null, withdrawalDate: null,
+      sentToCopiesDate: null, deliveredInCopiesBy: null, deliveredInCopiesDate: null,
+    });
+
+    if (batchMode) {
+      // Batch mode: clear only photo and tracking, keep everything else
+      document.getElementById('trackingCode').value = '';
+      capturedPhoto = null;
+      const area = document.getElementById('photoArea');
+      const oldImg = area.querySelector('img'); if (oldImg) oldImg.remove();
+      area.classList.remove('has-photo');
+      document.getElementById('photoPlaceholder').style.display = 'flex';
+      document.getElementById('photoOverlay').style.display = 'none';
+      document.getElementById('photoInput').value = '';
+      showToast('✅ Salvo! Próxima encomenda — troque foto e rastreio');
+    } else {
+      // Normal mode: clear everything
+      document.getElementById('trackingCode').value = '';
+      document.getElementById('recipientName').value = '';
+      document.getElementById('recipientRoom').value = '';
+      if (document.getElementById('obsField')) document.getElementById('obsField').value = '';
+      capturedPhoto = null; selectedCarrier = ''; selRtypeVal = '';
+      document.querySelectorAll('.carrier-opt').forEach(o => o.classList.remove('selected'));
+      document.querySelectorAll('[data-rt]').forEach(o => o.classList.remove('selected'));
+      const area = document.getElementById('photoArea');
+      const oldImg = area.querySelector('img'); if (oldImg) oldImg.remove();
+      area.classList.remove('has-photo');
+      document.getElementById('photoPlaceholder').style.display = 'flex';
+      document.getElementById('photoOverlay').style.display = 'none';
+      document.getElementById('photoInput').value = '';
+      updateDateTimeDisplay();
+      showToast('✅ Encomenda registrada com sucesso!');
+    }
+  } catch(e) { showToast('❌ Erro: ' + e.message, 'error'); }
+  finally { btns.forEach(b => { b.textContent = '✅ Registrar Chegada'; b.disabled = false; }); }
 }
-} catch(e) { showToast('❌ Erro: ' + e.message, 'error'); }
-finally { btns.forEach(b => { b.textContent = '✅ Registrar Chegada'; b.disabled = false; }); }
-}
+
 // =====================
 // COPIES
 // =====================
 function renderCopiesOut() {
-const q = (document.getElementById('copiesOutSearch').value||'').toLowerCase();
-const list = packages.filter(p=>p.status==='Em
-Estoque'&&p.recipientType==='Aluno').filter(p=>!q||p.recipient.toLowerCase().includes(q));
-const el = document.getElementById('copiesOutList');
-if (!list.length) { el.innerHTML = '<p
-style="text-align:center;color:var(--text3);padding:30px">Nenhum aluno em estoque</p>';
-return; }
-el.innerHTML = list.map(p => {
-const sel = selCopies.has(p.id);
-return `<div class="pkg-card" onclick="toggleSelCopy('${p.id}')"
-style="position:relative;border-color:${sel?'#c07aff':'var(--border)'};background:${sel?'rgba(19
-2,122,255,.06)':'var(--surface)'}">
-<div
-style="position:absolute;top:10px;right:10px;width:22px;height:22px;border-radius:50%;bord
-er:2px solid
-${sel?'#c07aff':'var(--border)'};background:${sel?'#c07aff':'var(--surface2)'};display:flex;align-i
-tems:center;justify-content:center;font-size:11px;color:#fff">${sel?'✓':''}</div>
-${p.photo?`<div class="pkg-thumb"><img src="${p.photo}"
-style="width:100%;height:100%;object-fit:cover;border-radius:6px"></div>`:'<div
-class="pkg-thumb">📦</div>'}
-<div class="pkg-info"><div class="pkg-name">${p.recipient}</div><div
-class="pkg-meta"><span>${p.room||'—'}</span></div><div
-class="pkg-track">${p.trackingCode}</div></div>
-</div>`;
-}).join('');
-updateSendBar();
+  const q = (document.getElementById('copiesOutSearch').value||'').toLowerCase();
+  const list = packages.filter(p=>p.status==='Em Estoque'&&p.recipientType==='Aluno').filter(p=>!q||p.recipient.toLowerCase().includes(q));
+  const el = document.getElementById('copiesOutList');
+  if (!list.length) { el.innerHTML = '<p style="text-align:center;color:var(--text3);padding:30px">Nenhum aluno em estoque</p>'; return; }
+  el.innerHTML = list.map(p => {
+    const sel = selCopies.has(p.id);
+    return `<div class="pkg-card" onclick="toggleSelCopy('${p.id}')" style="position:relative;border-color:${sel?'#c07aff':'var(--border)'};background:${sel?'rgba(192,122,255,.06)':'var(--surface)'}">
+      <div style="position:absolute;top:10px;right:10px;width:22px;height:22px;border-radius:50%;border:2px solid ${sel?'#c07aff':'var(--border)'};background:${sel?'#c07aff':'var(--surface2)'};display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff">${sel?'✓':''}</div>
+      ${p.photo?`<div class="pkg-thumb"><img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:6px"></div>`:'<div class="pkg-thumb">📦</div>'}
+      <div class="pkg-info"><div class="pkg-name">${p.recipient}</div><div class="pkg-meta"><span>${p.room||'—'}</span></div><div class="pkg-track">${p.trackingCode}</div></div>
+    </div>`;
+  }).join('');
+  updateSendBar();
 }
-function toggleSelCopy(id) { if(selCopies.has(id))selCopies.delete(id);else selCopies.add(id);
-renderCopiesOut(); }
+
+function toggleSelCopy(id) { if(selCopies.has(id))selCopies.delete(id);else selCopies.add(id); renderCopiesOut(); }
+
 function updateSendBar() {
-const n = selCopies.size;
-const active =
-document.getElementById('screen-copies-out')&&document.getElementById('screen-copies-
-out').classList.contains('active');
-const bar = document.getElementById('sendBar');
-bar.style.display = (n>0&&active)?'flex':'none';
-document.getElementById('sendBarCount').textContent = n+' selecionada'+(n>1?'s':'');
+  const n = selCopies.size;
+  const active = document.getElementById('screen-copies-out')&&document.getElementById('screen-copies-out').classList.contains('active');
+  const bar = document.getElementById('sendBar');
+  bar.style.display = (n>0&&active)?'flex':'none';
+  document.getElementById('sendBarCount').textContent = n+' selecionada'+(n>1?'s':'');
 }
+
 async function sendToCopies() {
-if(!selCopies.size)return;
-try {
-const batch=db.batch();
-selCopies.forEach(id=>batch.update(packagesCol.doc(id),{status:'No Setor de
-Cópias',sentToCopiesDate:new Date().toISOString()}));
-await batch.commit();
-const n=selCopies.size; selCopies.clear(); updateSendBar();
-showToast(`📤 ${n} encomenda${n>1?'s':''} enviada${n>1?'s':''} para Cópias!`);
-} catch(e){showToast('❌ Erro: '+e.message,'error');}
+  if(!selCopies.size)return;
+  try {
+    const batch=db.batch();
+    selCopies.forEach(id=>batch.update(packagesCol.doc(id),{status:'No Setor de Cópias',sentToCopiesDate:new Date().toISOString()}));
+    await batch.commit();
+    const n=selCopies.size; selCopies.clear(); updateSendBar();
+    showToast(`📤 ${n} encomenda${n>1?'s':''} enviada${n>1?'s':''} para Cópias!`);
+  } catch(e){showToast('❌ Erro: '+e.message,'error');}
 }
+
 function cleanTracking(t) {
-if (!t) return '(sem rastreio)';
-if (typeof t === 'object') return t.id || JSON.stringify(t);
-try {
-const parsed = JSON.parse(t);
-return parsed.id || parsed.code || t;
-} catch(e) { return t; }
+  if (!t) return '(sem rastreio)';
+  if (typeof t === 'object') return t.id || JSON.stringify(t);
+  try {
+    const parsed = JSON.parse(t);
+    return parsed.id || parsed.code || t;
+  } catch(e) { return t; }
 }
+
 function renderCopiesStock() {
-const q=(document.getElementById('copiesSearch').value||'').toLowerCase();
-const list=packages.filter(p=>p.status==='No Setor de
-Cópias').filter(p=>!q||p.recipient.toLowerCase().includes(q));
-const el=document.getElementById('copiesStockList');
-if(!list.length){el.innerHTML='<p
-style="text-align:center;color:var(--text3);padding:30px">Nenhuma encomenda aqui
-ainda</p>';return;}
-el.innerHTML=list.map(p=>`<div class="pkg-card" onclick="openCopiesDetail('${p.id}')">
-${p.photo?`<div class="pkg-thumb"><img src="${p.photo}"
-style="width:100%;height:100%;object-fit:cover;border-radius:6px"></div>`:'<div
-class="pkg-thumb">📦</div>'}
-<div class="pkg-info"><div class="pkg-name">${p.recipient}</div><div
-class="pkg-meta"><span>${p.room||'—'}</span></div><div
-class="pkg-track">${cleanTracking(p.trackingCode)}</div></div>
-</div>`).join('');
+  const q=(document.getElementById('copiesSearch').value||'').toLowerCase();
+  const list=packages.filter(p=>p.status==='No Setor de Cópias').filter(p=>!q||p.recipient.toLowerCase().includes(q));
+  const el=document.getElementById('copiesStockList');
+  if(!list.length){el.innerHTML='<p style="text-align:center;color:var(--text3);padding:30px">Nenhuma encomenda aqui ainda</p>';return;}
+  el.innerHTML=list.map(p=>`<div class="pkg-card" onclick="openCopiesDetail('${p.id}')">
+    ${p.photo?`<div class="pkg-thumb"><img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:6px"></div>`:'<div class="pkg-thumb">📦</div>'}
+    <div class="pkg-info"><div class="pkg-name">${p.recipient}</div><div class="pkg-meta"><span>${p.room||'—'}</span></div><div class="pkg-track">${cleanTracking(p.trackingCode)}</div></div>
+  </div>`).join('');
 }
+
 function renderCopiesHistory() {
-const q=(document.getElementById('copiesHistSearch').value||'').toLowerCase();
-const list=packages.filter(p=>p.status==='Entregue em
-Cópias').filter(p=>!q||p.recipient.toLowerCase().includes(q));
-const el=document.getElementById('copiesHistList');
-if(!list.length){el.innerHTML='<p
-style="text-align:center;color:var(--text3);padding:30px">Nenhuma entrega
-registrada</p>';return;}
-el.innerHTML=list.map(p=>`<div class="pkg-card" onclick="openCopiesDetail('${p.id}')">
-${p.photo?`<div class="pkg-thumb"><img src="${p.photo}"
-style="width:100%;height:100%;object-fit:cover;border-radius:6px"></div>`:'<div
-class="pkg-thumb">📦</div>'}
-<div class="pkg-info"><div class="pkg-name">${p.recipient}</div><div
-class="pkg-meta">Retirado por: <b>${p.deliveredInCopiesBy||'—'}</b></div></div>
-</div>`).join('');
+  const q=(document.getElementById('copiesHistSearch').value||'').toLowerCase();
+  const list=packages.filter(p=>p.status==='Entregue em Cópias').filter(p=>!q||p.recipient.toLowerCase().includes(q));
+  const el=document.getElementById('copiesHistList');
+  if(!list.length){el.innerHTML='<p style="text-align:center;color:var(--text3);padding:30px">Nenhuma entrega registrada</p>';return;}
+  el.innerHTML=list.map(p=>`<div class="pkg-card" onclick="openCopiesDetail('${p.id}')">
+    ${p.photo?`<div class="pkg-thumb"><img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:6px"></div>`:'<div class="pkg-thumb">📦</div>'}
+    <div class="pkg-info"><div class="pkg-name">${p.recipient}</div><div class="pkg-meta">Retirado por: <b>${p.deliveredInCopiesBy||'—'}</b></div></div>
+  </div>`).join('');
 }
+
 function openCopiesDetail(id) {
-try {
-currentPackageId = id;
-const pkg = packages.find(p=>p.id===id);
-if(!pkg){ alert('Encomenda não encontrada'); return; }
-function fdt(s){ if(!s)return'—'; const d=new Date(s); return d.toLocaleDateString('pt-BR')+'
-às '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); }
-document.getElementById('modalTitle').textContent = pkg.recipient;
-document.getElementById('modalSub').textContent = (pkg.recipientType||'') + (pkg.room ?
-' · ' + pkg.room : '');
-document.getElementById('modalPhoto').innerHTML = pkg.photo
-? '<img src="' + pkg.photo + '"
-style="width:100%;height:100%;object-fit:cover;border-radius:14px">'
-: '📦';
-var html = '';
-html += '<div class="detail-row"><span class="detail-key">Tipo</span><span
-class="detail-val">' + (pkg.recipientType||'—') + '</span></div>';
-html += '<div class="detail-row"><span class="detail-key">Transportadora</span><span
-class="detail-val">' + (pkg.carrier||'—') + '</span></div>';
-html += '<div class="detail-row"><span class="detail-key">Rastreio</span><span
-class="detail-val">' + pkg.trackingCode + '</span></div>';
-html += '<div class="detail-row"><span class="detail-key">Chegada
-Portaria</span><span class="detail-val">' + fdt(pkg.arrivalDate) + '</span></div>';
-html += '<div class="detail-row"><span class="detail-key">Enviado p/
-Cópias</span><span class="detail-val">' + fdt(pkg.sentToCopiesDate) + '</span></div>';
-html += '<div class="detail-row"><span class="detail-key">Status</span><span
-class="detail-val">' + pkg.status + '</span></div>';
-if (pkg.observation) html += '<div class="detail-row"><span
-class="detail-key">Observação</span><span class="detail-val">' + pkg.observation +
-'</span></div>';
-if (pkg.deliveredInCopiesBy) html += '<div class="detail-row"><span
-class="detail-key">Retirado por</span><span class="detail-val">' +
-pkg.deliveredInCopiesBy + '</span></div>';
-if (pkg.deliveredInCopiesDate) html += '<div class="detail-row"><span
-class="detail-key">Data Retirada</span><span class="detail-val">' +
-fdt(pkg.deliveredInCopiesDate) + '</span></div>';
-document.getElementById('modalDetails').innerHTML = html;
-var sec = document.getElementById('modalDeliverySection');
-if (pkg.status === 'No Setor de Cópias') {
-sec.style.display = 'block';
-document.getElementById('withdrawName').value = '';
-document.querySelector('#modalDeliverySection .btn-success').onclick =
-confirmCopiesDelivery;
-} else {
-sec.style.display = 'none';
+  try {
+    currentPackageId = id;
+    const pkg = packages.find(p=>p.id===id);
+    if(!pkg){ alert('Encomenda não encontrada'); return; }
+
+    function fdt(s){ if(!s)return'—'; const d=new Date(s); return d.toLocaleDateString('pt-BR')+' às '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); }
+
+    document.getElementById('modalTitle').textContent = pkg.recipient;
+    document.getElementById('modalSub').textContent = (pkg.recipientType||'') + (pkg.room ? ' · ' + pkg.room : '');
+    document.getElementById('modalPhoto').innerHTML = pkg.photo
+      ? '<img src="' + pkg.photo + '" style="width:100%;height:100%;object-fit:cover;border-radius:14px">'
+      : '📦';
+
+    var html = '';
+    html += '<div class="detail-row"><span class="detail-key">Tipo</span><span class="detail-val">' + (pkg.recipientType||'—') + '</span></div>';
+    html += '<div class="detail-row"><span class="detail-key">Transportadora</span><span class="detail-val">' + (pkg.carrier||'—') + '</span></div>';
+    html += '<div class="detail-row"><span class="detail-key">Rastreio</span><span class="detail-val">' + pkg.trackingCode + '</span></div>';
+    html += '<div class="detail-row"><span class="detail-key">Chegada Portaria</span><span class="detail-val">' + fdt(pkg.arrivalDate) + '</span></div>';
+    html += '<div class="detail-row"><span class="detail-key">Enviado p/ Cópias</span><span class="detail-val">' + fdt(pkg.sentToCopiesDate) + '</span></div>';
+    html += '<div class="detail-row"><span class="detail-key">Status</span><span class="detail-val">' + pkg.status + '</span></div>';
+    if (pkg.observation) html += '<div class="detail-row"><span class="detail-key">Observação</span><span class="detail-val">' + pkg.observation + '</span></div>';
+    if (pkg.deliveredInCopiesBy) html += '<div class="detail-row"><span class="detail-key">Retirado por</span><span class="detail-val">' + pkg.deliveredInCopiesBy + '</span></div>';
+    if (pkg.deliveredInCopiesDate) html += '<div class="detail-row"><span class="detail-key">Data Retirada</span><span class="detail-val">' + fdt(pkg.deliveredInCopiesDate) + '</span></div>';
+    document.getElementById('modalDetails').innerHTML = html;
+
+    var sec = document.getElementById('modalDeliverySection');
+    if (pkg.status === 'No Setor de Cópias') {
+      sec.style.display = 'block';
+      document.getElementById('withdrawName').value = '';
+      document.querySelector('#modalDeliverySection .btn-success').onclick = confirmCopiesDelivery;
+    } else {
+      sec.style.display = 'none';
+    }
+    document.getElementById('modal-detail').classList.add('open');
+  } catch(err) {
+    alert('Erro ao abrir detalhes: ' + err.message);
+  }
 }
-document.getElementById('modal-detail').classList.add('open');
-} catch(err) {
-alert('Erro ao abrir detalhes: ' + err.message);
-}
-}
+
 let _confirmingCopies = false;
 async function confirmCopiesDelivery() {
-if (_confirmingCopies) return;
-const name = document.getElementById('withdrawName').value.trim();
-if (!name) { showToast('⚠ Informe o nome do aluno', 'error'); return; }
-_confirmingCopies = true;
-const btn = document.querySelector('#modalDeliverySection .btn-success');
-btn.textContent = '⏳ Salvando...';
-btn.disabled = true;
-btn.style.opacity = '0.7';
-try {
-await packagesCol.doc(currentPackageId).update({
-status: 'Entregue em Cópias',
-deliveredInCopiesBy: name,
-deliveredInCopiesDate: new Date().toISOString()
-});
-showToast('✅ ' + name + ' retirou a encomenda!');
-closeModal();
-} catch(e) {
-showToast('❌ Erro: ' + e.message, 'error');
-btn.textContent = '✅ Aluno Retirou';
-btn.disabled = false;
-btn.style.opacity = '1';
-} finally {
-_confirmingCopies = false;
+  if (_confirmingCopies) return;
+  const name = document.getElementById('withdrawName').value.trim();
+  if (!name) { showToast('⚠️ Informe o nome do aluno', 'error'); return; }
+  _confirmingCopies = true;
+  const btn = document.querySelector('#modalDeliverySection .btn-success');
+  btn.textContent = '⏳ Salvando...';
+  btn.disabled = true;
+  btn.style.opacity = '0.7';
+  try {
+    await packagesCol.doc(currentPackageId).update({
+      status: 'Entregue em Cópias',
+      deliveredInCopiesBy: name,
+      deliveredInCopiesDate: new Date().toISOString()
+    });
+    showToast('✅ ' + name + ' retirou a encomenda!');
+    closeModal();
+  } catch(e) {
+    showToast('❌ Erro: ' + e.message, 'error');
+    btn.textContent = '✅ Aluno Retirou';
+    btn.disabled = false;
+    btn.style.opacity = '1';
+  } finally {
+    _confirmingCopies = false;
+  }
 }
-}
+
 // =====================
 // WHATSAPP
 // =====================
 function shareWhatsApp() {
-const inStock=packages.filter(p=>p.status==='Em
-Estoque'&&(p.recipientType==='Funcionário'||p.recipientType==='Compras'));
-if(!inStock.length){showToast('⚠ Nenhuma encomenda de funcionário em
-estoque','error');return;}
-const grouped={};
-inStock.forEach(p=>{if(!grouped[p.recipient])grouped[p.recipient]={count:0,type:p.recipientTy
-pe};grouped[p.recipient].count++;});
-const now=new
-Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
-const hora=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-let msg=`📦 *ENCOMENDAS NA PORTARIA*
-🗓 ${now} às ${hora}
+  const inStock=packages.filter(p=>p.status==='Em Estoque'&&(p.recipientType==='Funcionário'||p.recipientType==='Compras'));
+  if(!inStock.length){showToast('⚠️ Nenhuma encomenda de funcionário em estoque','error');return;}
+  const grouped={};
+  inStock.forEach(p=>{if(!grouped[p.recipient])grouped[p.recipient]={count:0,type:p.recipientType};grouped[p.recipient].count++;});
+  const now=new Date().toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric'});
+  const hora=new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
+  let msg=`📦 *ENCOMENDAS NA PORTARIA*
+🗓️ ${now} às ${hora}
+
 `;
-Object.entries(grouped).forEach(([name,info])=>{msg+=`${info.type==='Compras'?'🛒':'👷'}
-*${name}* — ${info.count} encomenda${info.count>1?'s':''}
+  Object.entries(grouped).forEach(([name,info])=>{msg+=`${info.type==='Compras'?'🛒':'👷'} *${name}* — ${info.count} encomenda${info.count>1?'s':''}
 `;});
-msg+=`
+  msg+=`
 _Portaria IAESC — PortaLog_`;
-window.open('https://api.whatsapp.com/send?text='+encodeURIComponent(msg),'_blank');
+  window.open('https://api.whatsapp.com/send?text='+encodeURIComponent(msg),'_blank');
 }
+
 // =====================
 // AUTOCOMPLETE NOMES
 // =====================
 function showNameSuggestions(val) {
-const box = document.getElementById('nameSuggestions');
-if (!val || val.length < 2) { box.style.display = 'none'; return; }
-const v = val.toLowerCase();
-const names = [...new Set(packages.map(p => p.recipient).filter(n => n &&
-n.toLowerCase().includes(v) && n.toLowerCase() !== v))].slice(0, 6);
-if (!names.length) { box.style.display = 'none'; return; }
-box.innerHTML = names.map(n =>
-`<div onclick="pickName('${n.replace(/'/g,"\'")}') " style="padding:11px
-14px;cursor:pointer;font-size:14px;border-bottom:1px solid
-var(--border);color:var(--text)">${n}</div>`
-).join('');
-box.style.display = 'block';
+  const box = document.getElementById('nameSuggestions');
+  if (!val || val.length < 2) { box.style.display = 'none'; return; }
+  const v = val.toLowerCase();
+  const names = [...new Set(packages.map(p => p.recipient).filter(n => n && n.toLowerCase().includes(v) && n.toLowerCase() !== v))].slice(0, 6);
+  if (!names.length) { box.style.display = 'none'; return; }
+  box.innerHTML = names.map(n =>
+    `<div onclick="pickName('${n.replace(/'/g,"\'")}') " style="padding:11px 14px;cursor:pointer;font-size:14px;border-bottom:1px solid var(--border);color:var(--text)">${n}</div>`
+  ).join('');
+  box.style.display = 'block';
 }
+
 function pickName(name) {
-document.getElementById('recipientName').value = name;
-hideNameSuggestions();
-// Also fill room if we can find it from last package
-const last = packages.find(p => p.recipient === name);
-if (last && last.room) document.getElementById('recipientRoom').value = last.room;
-// Also set recipientType if found
-if (last && last.recipientType) {
-document.querySelectorAll('[data-rt]').forEach(o => {
-o.classList.toggle('selected', o.dataset.rt === last.recipientType);
-});
-selRtypeVal = last.recipientType;
+  document.getElementById('recipientName').value = name;
+  hideNameSuggestions();
+  // Also fill room if we can find it from last package
+  const last = packages.find(p => p.recipient === name);
+  if (last && last.room) document.getElementById('recipientRoom').value = last.room;
+  // Also set recipientType if found
+  if (last && last.recipientType) {
+    document.querySelectorAll('[data-rt]').forEach(o => {
+      o.classList.toggle('selected', o.dataset.rt === last.recipientType);
+    });
+    selRtypeVal = last.recipientType;
+  }
 }
-}
+
 function hideNameSuggestions() {
-const box = document.getElementById('nameSuggestions');
-if (box) box.style.display = 'none';
+  const box = document.getElementById('nameSuggestions');
+  if (box) box.style.display = 'none';
 }
+
 // =====================
 // MODO LOTE
 // =====================
 let batchMode = false;
+
 function toggleBatchMode() {
-batchMode = !batchMode;
-const panel = document.getElementById('batchPanel');
-const btn = document.getElementById('btnBatch');
-if (batchMode) {
-panel.style.display = 'block';
-btn.style.display = 'none';
-} else {
-panel.style.display = 'none';
-btn.style.display = 'block';
-btn.textContent = '📦 Ativar Modo Lote';
+  batchMode = !batchMode;
+  const panel = document.getElementById('batchPanel');
+  const btn = document.getElementById('btnBatch');
+  if (batchMode) {
+    panel.style.display = 'block';
+    btn.style.display = 'none';
+  } else {
+    panel.style.display = 'none';
+    btn.style.display = 'block';
+    btn.textContent = '📦 Ativar Modo Lote';
+  }
 }
-}
+
 function nextBatchItem() {
-registerPackage();
+  registerPackage();
 }
+
 // =====================
 // VISUALIZATION MODE
 // =====================
 let visTab = 'portaria';
+
 function initVisMode() {
-if (window.location.hash === '#visualizacao' || window.location.search.includes('vis=1')) {
-// Hide ALL navigation and controls
-document.getElementById('modeBar').style.display = 'none';
-document.querySelectorAll('.nav').forEach(n => n.style.display = 'none');
-document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-document.getElementById('screen-visualizacao').classList.add('active');
-// Add read-only banner
-const app = document.getElementById('app') || document.querySelector('.app-shell') ||
-document.body;
-const banner = document.createElement('div');
-banner.style.cssText = 'background:#1a1a2e;border-bottom:2px solid #c07aff;padding:8px
-16px;text-align:center;font-size:12px;color:#c07aff;font-weight:600';
-banner.textContent = '👁 MODO VISUALIZAÇÃO — Somente Leitura';
-document.body.insertBefore(banner, document.body.firstChild);
-renderVis();
+  if (window.location.hash === '#visualizacao' || window.location.search.includes('vis=1')) {
+    // Hide ALL navigation and controls
+    document.getElementById('modeBar').style.display = 'none';
+    document.querySelectorAll('.nav').forEach(n => n.style.display = 'none');
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+    document.getElementById('screen-visualizacao').classList.add('active');
+    // Add read-only banner
+    const app = document.getElementById('app') || document.querySelector('.app-shell') || document.body;
+    const banner = document.createElement('div');
+    banner.style.cssText = 'background:#1a1a2e;border-bottom:2px solid #c07aff;padding:8px 16px;text-align:center;font-size:12px;color:#c07aff;font-weight:600';
+    banner.textContent = '👁️ MODO VISUALIZAÇÃO — Somente Leitura';
+    document.body.insertBefore(banner, document.body.firstChild);
+    renderVis();
+  }
 }
-}
+
 function setVisTab(tab) {
-visTab = tab;
-document.getElementById('visTabPortaria').style.background = tab==='portaria' ?
-'var(--surface3)' : 'transparent';
-document.getElementById('visTabPortaria').style.color = tab==='portaria' ? 'var(--accent)' :
-'var(--text2)';
-document.getElementById('visTabPortaria').style.border = tab==='portaria' ? 'none' : '1px
-solid var(--border)';
-document.getElementById('visTabCopias').style.background = tab==='copias' ?
-'var(--surface3)' : 'transparent';
-document.getElementById('visTabCopias').style.color = tab==='copias' ? '#c07aff' :
-'var(--text2)';
-document.getElementById('visTabCopias').style.border = tab==='copias' ? 'none' : '1px solid
-var(--border)';
-renderVis();
+  visTab = tab;
+  document.getElementById('visTabPortaria').style.background = tab==='portaria' ? 'var(--surface3)' : 'transparent';
+  document.getElementById('visTabPortaria').style.color = tab==='portaria' ? 'var(--accent)' : 'var(--text2)';
+  document.getElementById('visTabPortaria').style.border = tab==='portaria' ? 'none' : '1px solid var(--border)';
+  document.getElementById('visTabCopias').style.background = tab==='copias' ? 'var(--surface3)' : 'transparent';
+  document.getElementById('visTabCopias').style.color = tab==='copias' ? '#c07aff' : 'var(--text2)';
+  document.getElementById('visTabCopias').style.border = tab==='copias' ? 'none' : '1px solid var(--border)';
+  renderVis();
 }
+
 function renderVis() {
-const q = (document.getElementById('visSearch').value||'').toLowerCase();
-let list;
-if (visTab === 'portaria') {
-list = packages.filter(p => p.status === 'Em Estoque').filter(p => !q ||
-p.recipient.toLowerCase().includes(q) || p.trackingCode.toLowerCase().includes(q));
-} else {
-list = packages.filter(p => p.status === 'No Setor de Cópias').filter(p => !q ||
-p.recipient.toLowerCase().includes(q));
+  const q = (document.getElementById('visSearch').value||'').toLowerCase();
+  let list;
+  if (visTab === 'portaria') {
+    list = packages.filter(p => p.status === 'Em Estoque').filter(p => !q || p.recipient.toLowerCase().includes(q) || p.trackingCode.toLowerCase().includes(q));
+  } else {
+    list = packages.filter(p => p.status === 'No Setor de Cópias').filter(p => !q || p.recipient.toLowerCase().includes(q));
+  }
+  const el = document.getElementById('visList');
+  if (!list.length) { el.innerHTML = '<p style="text-align:center;color:var(--text3);padding:30px">Nenhuma encomenda no momento</p>'; return; }
+  el.innerHTML = list.map(p => `<div class="pkg-card" onclick="openVisDetail('${p.id}')" style="cursor:pointer">
+    ${p.photo ? `<div class="pkg-thumb"><img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:6px"></div>` : '<div class="pkg-thumb">📦</div>'}
+    <div class="pkg-info">
+      <div class="pkg-name">${p.recipient}</div>
+      <div class="pkg-meta"><span>${p.room||'—'}</span> · <span>${p.carrier||''}</span></div>
+      <div class="pkg-track">${p.trackingCode}</div>
+      ${p.observation ? `<div style="font-size:11px;color:var(--accent4);margin-top:3px">📝 ${p.observation}</div>` : ''}
+    </div>
+  </div>`).join('');
 }
-const el = document.getElementById('visList');
-if (!list.length) { el.innerHTML = '<p
-style="text-align:center;color:var(--text3);padding:30px">Nenhuma encomenda no
-momento</p>'; return; }
-el.innerHTML = list.map(p => `<div class="pkg-card" onclick="openVisDetail('${p.id}')"
-style="cursor:pointer">
-${p.photo ? `<div class="pkg-thumb"><img src="${p.photo}"
-style="width:100%;height:100%;object-fit:cover;border-radius:6px"></div>` : '<div
-class="pkg-thumb">📦</div>'}
-<div class="pkg-info">
-<div class="pkg-name">${p.recipient}</div>
-<div class="pkg-meta"><span>${p.room||'—'}</span> ·
-<span>${p.carrier||''}</span></div>
-<div class="pkg-track">${p.trackingCode}</div>
-${p.observation ? `<div style="font-size:11px;color:var(--accent4);margin-top:3px">📝
-${p.observation}</div>` : ''}
-</div>
-</div>`).join('');
+
+function closeVisDetail() {
+  var o = document.getElementById('visDetailOverlay');
+  if (o) o.style.display = 'none';
 }
+
 function openVisDetail(id) {
-const pkg = packages.find(p => p.id === id); if (!pkg) return;
-function fdt(s) { if(!s)return'—'; const d=new Date(s); return d.toLocaleDateString('pt-BR')+'
-às '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); }
-var html = '';
-html += '<div style="text-align:center;margin-bottom:14px">';
-if (pkg.photo) html += '<img src="' + pkg.photo + '"
-style="width:100%;max-height:180px;object-fit:cover;border-radius:12px;margin-bottom:10px
-">';
-html += '<div style="font-size:18px;font-weight:700;color:var(--text)">' + pkg.recipient +
-'</div>';
-html += '<div style="font-size:13px;color:var(--text2)">' + (pkg.room||'') + '</div></div>';
-html += '<div
-style="background:var(--surface2);border-radius:12px;padding:14px;display:flex;flex-directio
-n:column;gap:8px">';
-html += '<div class="detail-row"><span class="detail-key">Transportadora</span><span
-class="detail-val">' + (pkg.carrier||'—') + '</span></div>';
-html += '<div class="detail-row"><span class="detail-key">Rastreio</span><span
-class="detail-val">' + pkg.trackingCode + '</span></div>';
-html += '<div class="detail-row"><span class="detail-key">Chegou em</span><span
-class="detail-val">' + fdt(pkg.arrivalDate) + '</span></div>';
-html += '<div class="detail-row"><span class="detail-key">Status</span><span
-class="detail-val">' + pkg.status + '</span></div>';
-if (pkg.observation) html += '<div class="detail-row"><span
-class="detail-key">Observação</span><span class="detail-val">' + pkg.observation +
-'</span></div>';
-if (pkg.sentToCopiesDate) html += '<div class="detail-row"><span
-class="detail-key">Enviado p/ Cópias</span><span class="detail-val">' +
-fdt(pkg.sentToCopiesDate) + '</span></div>';
-html += '</div>';
-// Show in a simple overlay
-var overlay = document.getElementById('visDetailOverlay');
-if (!overlay) {
-overlay = document.createElement('div');
-overlay.id = 'visDetailOverlay';
-overlay.style.cssText =
-'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:flex;align-items:flex-end;
-justify-content:center';
-overlay.onclick = function(e){ if(e.target===overlay) overlay.style.display='none'; };
-document.body.appendChild(overlay);
+  const pkg = packages.find(p => p.id === id); if (!pkg) return;
+  function fdt(s) { if(!s)return'—'; const d=new Date(s); return d.toLocaleDateString('pt-BR')+' às '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); }
+
+  var html = '';
+  html += '<div style="text-align:center;margin-bottom:14px">';
+  if (pkg.photo) html += '<img src="' + pkg.photo + '" style="width:100%;max-height:180px;object-fit:cover;border-radius:12px;margin-bottom:10px">';
+  html += '<div style="font-size:18px;font-weight:700;color:var(--text)">' + pkg.recipient + '</div>';
+  html += '<div style="font-size:13px;color:var(--text2)">' + (pkg.room||'') + '</div></div>';
+  html += '<div style="background:var(--surface2);border-radius:12px;padding:14px;display:flex;flex-direction:column;gap:8px">';
+  html += '<div class="detail-row"><span class="detail-key">Transportadora</span><span class="detail-val">' + (pkg.carrier||'—') + '</span></div>';
+  html += '<div class="detail-row"><span class="detail-key">Rastreio</span><span class="detail-val">' + pkg.trackingCode + '</span></div>';
+  html += '<div class="detail-row"><span class="detail-key">Chegou em</span><span class="detail-val">' + fdt(pkg.arrivalDate) + '</span></div>';
+  html += '<div class="detail-row"><span class="detail-key">Status</span><span class="detail-val">' + pkg.status + '</span></div>';
+  if (pkg.observation) html += '<div class="detail-row"><span class="detail-key">Observação</span><span class="detail-val">' + pkg.observation + '</span></div>';
+  if (pkg.sentToCopiesDate) html += '<div class="detail-row"><span class="detail-key">Enviado p/ Cópias</span><span class="detail-val">' + fdt(pkg.sentToCopiesDate) + '</span></div>';
+  html += '</div>';
+
+  // Show in a simple overlay
+  var overlay = document.getElementById('visDetailOverlay');
+  if (!overlay) {
+    overlay = document.createElement('div');
+    overlay.id = 'visDetailOverlay';
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.7);z-index:500;display:flex;align-items:flex-end;justify-content:center';
+    overlay.onclick = function(e){ if(e.target===overlay) overlay.style.display='none'; };
+    document.body.appendChild(overlay);
+  }
+  overlay.innerHTML = '<div style="background:var(--surface);border-radius:20px 20px 0 0;padding:20px;width:100%;max-width:480px;max-height:85vh;overflow-y:auto">' +
+    '<div style="width:40px;height:4px;background:var(--border);border-radius:2px;margin:0 auto 16px"></div>' +
+    html +
+    '<button onclick="closeVisDetail()" style="width:100%;margin-top:14px;padding:13px;border-radius:14px;border:none;background:var(--surface2);color:var(--text2);font-size:14px;font-weight:600;cursor:pointer">Fechar</button>' +
+    '</div>';
+  overlay.style.display = 'flex';
 }
-overlay.innerHTML = '<div style="background:var(--surface);border-radius:20px 20px 0
-0;padding:20px;width:100%;max-width:480px;max-height:85vh;overflow-y:auto">' +
-'<div style="width:40px;height:4px;background:var(--border);border-radius:2px;margin:0
-auto 16px"></div>' +
-html +
-'<button onclick="document.getElementById('visDetailOverlay').style.display='none'"
-style="width:100%;margin-top:14px;padding:13px;border-radius:14px;border:none;backgrou
-nd:var(--surface2);color:var(--text2);font-family:'DM
-Sans',sans-serif;font-size:14px;font-weight:600;cursor:pointer">Fechar</button>' +
-'</div>';
-overlay.style.display = 'flex';
-}
+
 // =====================
 // WHATSAPP CÓPIAS
 // =====================
 function shareWhatsAppCopias() {
-const lista = packages.filter(p => p.status === 'No Setor de Cópias');
-if (!lista.length) { showToast('⚠ Nenhuma encomenda no setor de cópias', 'error'); return; }
-// Group by recipient, count packages
-const grouped = {};
-lista.forEach(p => {
-if (!grouped[p.recipient]) grouped[p.recipient] = { count: 0, room: p.room || '' };
-grouped[p.recipient].count++;
-});
-const now = new Date().toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit',
-year:'numeric'});
-const hora = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-let msg = '📦 *ENCOMENDAS NO SETOR DE CÓPIAS*
-';
-msg += '🗓 ' + now + ' às ' + hora + '
-';
-msg += 'Os seguintes alunos têm encomendas aguardando retirada:
-';
-Object.entries(grouped).forEach(([nome, info]) => {
-msg += '🎓 *' + nome + '*';
-if (info.room) msg += ' — ' + info.room;
-if (info.count > 1) msg += ' (' + info.count + ' encomendas)';
-msg += '
-';
-});
-msg += '
-_Retirar no Setor de Cópias — Portaria IAESC_';
-window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(msg),
-'_blank');
+  const lista = packages.filter(p => p.status === 'No Setor de Cópias');
+  if (!lista.length) { showToast('⚠️ Nenhuma encomenda no setor de cópias', 'error'); return; }
+
+  // Group by recipient, count packages
+  const grouped = {};
+  lista.forEach(p => {
+    if (!grouped[p.recipient]) grouped[p.recipient] = { count: 0, room: p.room || '' };
+    grouped[p.recipient].count++;
+  });
+
+  const now = new Date().toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit', year:'numeric'});
+  const hora = new Date().toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
+
+  let msg = '📦 *ENCOMENDAS NO SETOR DE CÓPIAS*\n';
+  msg += '🗓️ ' + now + ' às ' + hora + '\n\n';
+  msg += 'Os seguintes alunos têm encomendas aguardando retirada:\n\n';
+
+  Object.entries(grouped).forEach(([nome, info]) => {
+    msg += '🎓 *' + nome + '*';
+    if (info.room) msg += ' — ' + info.room;
+    if (info.count > 1) msg += ' (' + info.count + ' encomendas)';
+    msg += '\n';
+  });
+
+  msg += '\n_Retirar no Setor de Cópias — Portaria IAESC_';
+
+  window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(msg), '_blank');
 }
+
 // =====================
 // PWA SERVICE WORKER
 // =====================
 if ('serviceWorker' in navigator) {
-window.addEventListener('load', () => {
-navigator.serviceWorker.register('/sw.js')
-.then(() => console.log('PortaLog SW registrado ✅'))
-.catch(e => console.log('SW erro:', e));
-});
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(() => console.log('PortaLog SW registrado ✅'))
+      .catch(e => console.log('SW erro:', e));
+  });
 }
+
 // Start Firebase real-time sync
 initRealtimeSync();
 updateDateTimeDisplay();
