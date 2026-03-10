@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -1426,11 +1427,17 @@ function openDetail(id) {
   document.getElementById('modalDetails').innerHTML =
     rows.map(([k,v]) => `<div class="detail-row"><span class="detail-key">${k}</span><span class="detail-val">${v}</span></div>`).join('');
 
-  // Delivery section
+  // Delivery section - ALWAYS reset button to confirmDelivery for portaria
   const deliverySection = document.getElementById('modalDeliverySection');
+  const deliveryBtn = document.querySelector('#modalDeliverySection .btn-success');
   if (pkg.status === 'Em Estoque') {
     deliverySection.style.display = 'block';
     document.getElementById('withdrawName').value = '';
+    // Always reset to portaria delivery function
+    deliveryBtn.onclick = confirmDelivery;
+    deliveryBtn.textContent = '✅ Confirmar Retirada';
+    deliveryBtn.disabled = false;
+    deliveryBtn.style.opacity = '1';
   } else {
     deliverySection.style.display = 'none';
   }
