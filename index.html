@@ -1207,8 +1207,7 @@ handleScanError(e);
 function handleScanError(err) {
 const msg = (err && err.message) ? err.message : String(err);
 if (/permission|denied|allow/i.test(msg)) {
-setScanStatus('🚫 Permissão de câmera negada. Vá em Configurações do navegador e
-permita o acesso à câmera, depois tente novamente.');
+setScanStatus('🚫 Permissão de câmera negada. Vá em Configurações do navegador e permita o acesso à câmera, depois tente novamente.');
 } else if (/https|secure/i.test(msg)) {
 setScanStatus('🔒 A câmera requer HTTPS. Use o campo manual abaixo.');
 } else {
