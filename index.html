@@ -889,7 +889,7 @@
           <input type="text" id="withdrawName" placeholder="Nome completo de quem retirou">
         </div>
       </div>
-      <button class="btn btn-success" onclick="confirmDelivery()">
+      <button class="btn btn-success" id="btnConfirmarRetirada">
         ✅ Confirmar Retirada
       </button>
     </div>
@@ -1434,11 +1434,13 @@ function openDetail(id) {
     deliverySection.style.display = 'block';
     document.getElementById('withdrawName').value = '';
     // Always reset to portaria delivery function
-    deliveryBtn.onclick = confirmDelivery;
-    deliveryBtn.textContent = '✅ Confirmar Retirada';
-    deliveryBtn.disabled = false;
-    deliveryBtn.style.opacity = '1';
-    deliveryBtn.style.pointerEvents = 'auto';
+    var deliveryBtnNew = document.getElementById('btnConfirmarRetirada');
+    if (deliveryBtnNew) {
+      deliveryBtnNew.onclick = confirmDelivery;
+      deliveryBtnNew.textContent = '✅ Confirmar Retirada';
+      deliveryBtnNew.disabled = false;
+      deliveryBtnNew.style.opacity = '1';
+    }
   } else {
     deliverySection.style.display = 'none';
   }
@@ -1449,21 +1451,37 @@ function openDetail(id) {
 function closeModal() {
   document.getElementById('modal-detail').classList.remove('open');
   currentPackageId = null;
+  // Reset botão sempre
+  var btn = document.getElementById('btnConfirmarRetirada');
+  if (btn) {
+    btn.textContent = '✅ Confirmar Retirada';
+    btn.disabled = false;
+    btn.style.opacity = '1';
+    btn.onclick = confirmDelivery;
+  }
+  var inp = document.getElementById('withdrawName');
+  if (inp) inp.value = '';
 }
 
 function confirmDelivery() {
-  const name = document.getElementById('withdrawName').value.trim();
+  var btn = document.getElementById('btnConfirmarRetirada');
+  var name = document.getElementById('withdrawName').value.trim();
   if (!name) { showToast('⚠️ Informe o nome de quem retirou', 'error'); return; }
-  const pkgId = currentPackageId;
-  closeModal();
-  showToast('✅ Retirada registrada para ' + name);
-  packagesCol.doc(pkgId).update({
-    status: 'Entregue',
-    withdrawnBy: name,
-    withdrawalDate: new Date().toISOString(),
-  }).catch(e => {
-    showToast('❌ Erro ao salvar. Verifique a conexão.', 'error');
-  });
+  var pkgId = currentPackageId;
+  // Desativa botão só visualmente por 300ms, depois fecha
+  btn.disabled = true;
+  btn.textContent = '⏳ Aguarde...';
+  setTimeout(function() {
+    closeModal();
+    showToast('✅ Retirada registrada para ' + name);
+    packagesCol.doc(pkgId).update({
+      status: 'Entregue',
+      withdrawnBy: name,
+      withdrawalDate: new Date().toISOString(),
+    }).catch(function(e) {
+      showToast('❌ Erro ao salvar. Verifique a conexão.', 'error');
+    });
+  }, 300);
 }
 
 // Close modals on overlay click
