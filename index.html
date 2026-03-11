@@ -619,6 +619,10 @@
       <span class="nav-icon">📋</span>
       <span>Histórico</span>
     </button>
+    <button class="nav-btn" onclick="showScreen('busca')" id="nav-busca">
+      <span class="nav-icon">🔎</span>
+      <span>Busca</span>
+    </button>
   </nav>
 
   <!-- NAV COPIAS -->
@@ -805,6 +809,26 @@
       <div class="pkg-list" id="historyList"></div>
     </div>
 
+    <!-- SCREEN: BUSCA GLOBAL -->
+    <div class="screen" id="screen-busca">
+      <div class="section-title">Busca Global</div>
+      <div class="section-sub">Pesquise em todas as encomendas</div>
+
+      <div class="search-row" style="margin-bottom:8px">
+        <div class="search-wrap" style="flex:1">
+          <span class="search-icon">🔍</span>
+          <input type="text" id="globalSearch" placeholder="Nome, rastreio, transportadora..." oninput="renderGlobalSearch()">
+        </div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
+        <input type="date" id="searchDateFrom" onchange="renderGlobalSearch()" style="flex:1;padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px">
+        <input type="date" id="searchDateTo" onchange="renderGlobalSearch()" style="flex:1;padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px">
+      </div>
+
+      <div id="globalSearchResults"></div>
+    </div>
+
     <!-- COPIES OUT -->
     <div class="screen" id="screen-copies-out">
       <div class="section-title">Enviar para Cópias</div>
@@ -892,6 +916,34 @@
       <button class="btn btn-success" id="btnConfirmarRetirada">
         ✅ Confirmar Retirada
       </button>
+    </div>
+
+    <div id="modalEditSection" style="margin-top:12px;display:none">
+      <div class="card" style="margin-bottom:8px">
+        <div class="card-title">✏️ Editar Encomenda</div>
+        <div class="field">
+          <label>Nome do Destinatário</label>
+          <input type="text" id="editName" placeholder="Nome completo">
+        </div>
+        <div class="field">
+          <label>Tipo</label>
+          <select id="editType" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:14px">
+            <option value="Aluno">Aluno</option>
+            <option value="Funcionário">Funcionário</option>
+            <option value="Compras">Compras</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Sala / Setor</label>
+          <input type="text" id="editRoom" placeholder="Ex: Sala 12, Secretaria...">
+        </div>
+        <button class="btn btn-success" style="margin-top:8px" onclick="saveEdit()">💾 Salvar Alterações</button>
+      </div>
+    </div>
+
+    <div id="modalActionBtns" style="margin-top:8px;display:none;gap:8px;flex-direction:column">
+      <button class="btn" style="background:var(--surface3);color:var(--text)" onclick="toggleEdit()">✏️ Editar Nome / Tipo</button>
+      <button class="btn" style="background:#7c3aed;color:#fff" id="btnRevertDelivery" onclick="revertDelivery()" style="display:none">↩️ Reverter Entrega</button>
     </div>
 
     <button class="btn btn-danger" style="margin-top:10px" onclick="closeModal()">
@@ -1427,13 +1479,11 @@ function openDetail(id) {
   document.getElementById('modalDetails').innerHTML =
     rows.map(([k,v]) => `<div class="detail-row"><span class="detail-key">${k}</span><span class="detail-val">${v}</span></div>`).join('');
 
-  // Delivery section - ALWAYS reset button to confirmDelivery for portaria
+  // Delivery section
   const deliverySection = document.getElementById('modalDeliverySection');
-  const deliveryBtn = document.querySelector('#modalDeliverySection .btn-success');
   if (pkg.status === 'Em Estoque') {
     deliverySection.style.display = 'block';
     document.getElementById('withdrawName').value = '';
-    // Always reset to portaria delivery function
     var deliveryBtnNew = document.getElementById('btnConfirmarRetirada');
     if (deliveryBtnNew) {
       deliveryBtnNew.onclick = confirmDelivery;
@@ -1445,13 +1495,135 @@ function openDetail(id) {
     deliverySection.style.display = 'none';
   }
 
+  // Edit section - populate fields
+  document.getElementById('editName').value = pkg.recipient || '';
+  document.getElementById('editRoom').value = pkg.room || '';
+  document.getElementById('editType').value = pkg.recipientType || 'Aluno';
+  document.getElementById('modalEditSection').style.display = 'none';
+
+  // Action buttons - show edit always, revert only if delivered
+  var actionBtns = document.getElementById('modalActionBtns');
+  actionBtns.style.display = 'flex';
+  var revertBtn = document.getElementById('btnRevertDelivery');
+  if (pkg.status === 'Entregue' || pkg.status === 'Entregue em Cópias') {
+    revertBtn.style.display = 'block';
+  } else {
+    revertBtn.style.display = 'none';
+  }
+
   document.getElementById('modal-detail').classList.add('open');
+}
+
+function toggleEdit() {
+  var sec = document.getElementById('modalEditSection');
+  sec.style.display = sec.style.display === 'none' ? 'block' : 'none';
+}
+
+function saveEdit() {
+  var name = document.getElementById('editName').value.trim();
+  var room = document.getElementById('editRoom').value.trim();
+  var type = document.getElementById('editType').value;
+  if (!name) { showToast('⚠️ Informe o nome', 'error'); return; }
+  packagesCol.doc(currentPackageId).update({
+    recipient: name,
+    room: room,
+    recipientType: type
+  }).then(function() {
+    showToast('✅ Dados atualizados!');
+    closeModal();
+  }).catch(function(e) {
+    showToast('❌ Erro ao salvar', 'error');
+  });
+}
+
+function revertDelivery() {
+  if (!confirm('Reverter esta entrega para Em Estoque?')) return;
+  packagesCol.doc(currentPackageId).update({
+    status: 'Em Estoque',
+    withdrawnBy: null,
+    withdrawalDate: null,
+    deliveredInCopiesBy: null,
+    deliveredInCopiesDate: null
+  }).then(function() {
+    showToast('↩️ Entrega revertida!');
+    closeModal();
+  }).catch(function(e) {
+    showToast('❌ Erro ao reverter', 'error');
+  });
+}
+
+function renderGlobalSearch() {
+  var search = (document.getElementById('globalSearch').value || '').toLowerCase();
+  var dateFrom = document.getElementById('searchDateFrom').value;
+  var dateTo = document.getElementById('searchDateTo').value;
+  var el = document.getElementById('globalSearchResults');
+
+  if (!search && !dateFrom && !dateTo) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">🔎</div><h3>Digite para buscar</h3><p>Pesquise por nome, rastreio ou use filtro de data</p></div>';
+    return;
+  }
+
+  var list = packages.filter(function(p) {
+    // Text filter
+    var matchText = !search || (
+      p.recipient.toLowerCase().includes(search) ||
+      cleanTracking(p.trackingCode).toLowerCase().includes(search) ||
+      (p.room || '').toLowerCase().includes(search) ||
+      (p.carrier || '').toLowerCase().includes(search) ||
+      (p.withdrawnBy || '').toLowerCase().includes(search)
+    );
+    // Date filter
+    var matchDate = true;
+    if (dateFrom || dateTo) {
+      var pkgDate = p.arrivalDate ? p.arrivalDate.substring(0, 10) : '';
+      if (dateFrom && pkgDate < dateFrom) matchDate = false;
+      if (dateTo && pkgDate > dateTo) matchDate = false;
+    }
+    return matchText && matchDate;
+  });
+
+  if (list.length === 0) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">📭</div><h3>Nenhum resultado</h3><p>Tente outros termos ou datas</p></div>';
+    return;
+  }
+
+  var statusLabel = {
+    'Em Estoque': '⏳ Em Estoque',
+    'No Setor de Cópias': '📬 No Setor de Cópias',
+    'Entregue': '✅ Entregue',
+    'Entregue em Cópias': '✅ Entregue em Cópias'
+  };
+  var statusColor = {
+    'Em Estoque': 'var(--accent4)',
+    'No Setor de Cópias': '#c07aff',
+    'Entregue': 'var(--accent2)',
+    'Entregue em Cópias': 'var(--accent2)'
+  };
+
+  el.innerHTML = '<div style="font-size:12px;color:var(--text2);margin-bottom:8px">' + list.length + ' resultado(s)</div>' +
+    list.slice().reverse().map(function(pkg) {
+      var thumb = pkg.photo
+        ? '<div class="pkg-thumb"><img src="' + pkg.photo + '" alt="foto"></div>'
+        : '<div class="pkg-thumb">📦</div>';
+      var st = pkg.status || 'Em Estoque';
+      return '<div class="pkg-card" onclick="openDetail(\'' + pkg.id + '\')" style="border-left:3px solid ' + (statusColor[st]||'var(--border)') + '">' +
+        thumb +
+        '<div class="pkg-info">' +
+          '<div class="pkg-name">' + pkg.recipient + '</div>' +
+          '<div class="pkg-meta"><span>' + (pkg.room || 'Setor não inf.') + '</span><span>' + formatDateTime(pkg.arrivalDate) + '</span></div>' +
+          '<div class="pkg-track">' + cleanTracking(pkg.trackingCode) + '</div>' +
+          '<div class="pkg-badges">' +
+            '<span class="badge badge-carrier ' + carrierClass(pkg.carrier) + '">' + carrierEmoji(pkg.carrier) + ' ' + pkg.carrier + '</span>' +
+            '<span style="font-size:11px;padding:3px 8px;border-radius:20px;background:var(--surface3);color:' + (statusColor[st]||'var(--text2)') + '">' + (statusLabel[st]||st) + '</span>' +
+          '</div>' +
+        '</div>' +
+      '</div>';
+    }).join('');
 }
 
 function closeModal() {
   document.getElementById('modal-detail').classList.remove('open');
   currentPackageId = null;
-  // Reset botão sempre
   var btn = document.getElementById('btnConfirmarRetirada');
   if (btn) {
     btn.textContent = '✅ Confirmar Retirada';
@@ -1461,6 +1633,10 @@ function closeModal() {
   }
   var inp = document.getElementById('withdrawName');
   if (inp) inp.value = '';
+  var editSec = document.getElementById('modalEditSection');
+  if (editSec) editSec.style.display = 'none';
+  var actionBtns = document.getElementById('modalActionBtns');
+  if (actionBtns) actionBtns.style.display = 'none';
 }
 
 function confirmDelivery() {
