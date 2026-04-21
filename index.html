@@ -1048,6 +1048,7 @@ function initRealtimeSync() {
     buildMonthFilters();
     renderHistory();
     if (document.getElementById('screen-visualizacao').classList.contains('active')) renderVis();
+    if (funcMode) renderFuncMode();
   }, err => {
     showLoading(false);
     showToast('⚠️ Erro de conexão com o servidor', 'error');
@@ -2062,21 +2063,87 @@ function nextBatchItem() {
 // =====================
 let visTab = 'portaria';
 
+let funcMode = false;
+
 function initVisMode() {
-  if (window.location.hash === '#visualizacao' || window.location.search.includes('vis=1')) {
+  if (window.location.hash === '#funcionarios') {
+    // FUNCIONARIOS MODE - only shows Funcionário + Compras packages
+    funcMode = true;
+    document.getElementById('modeBar').style.display = 'none';
+    document.querySelectorAll('.nav').forEach(n => n.style.display = 'none');
+    document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+
+    // Create a dedicated simple screen
+    var screen = document.createElement('div');
+    screen.id = 'screen-func';
+    screen.style.cssText = 'padding:16px;max-width:480px;margin:0 auto';
+    screen.innerHTML = `
+      <div style="text-align:center;padding:16px 0 8px">
+        <div style="font-size:22px;font-weight:800;color:var(--text)">📦 Encomendas — Funcionários</div>
+        <div style="font-size:12px;color:var(--text2);margin-top:4px">Encomendas aguardando retirada na portaria</div>
+      </div>
+      <div class="search-wrap" style="margin-bottom:12px">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="funcSearch" placeholder="Buscar seu nome..." oninput="renderFuncMode()">
+      </div>
+      <div id="funcList"></div>`;
+    document.body.appendChild(screen);
+
+    // Banner
+    const banner = document.createElement('div');
+    banner.style.cssText = 'background:#1a1a2e;border-bottom:2px solid var(--accent4);padding:8px 16px;text-align:center;font-size:12px;color:var(--accent4);font-weight:600';
+    banner.textContent = '👷 FUNCIONÁRIOS — Visualização em Tempo Real';
+    document.body.insertBefore(banner, document.body.firstChild);
+    renderFuncMode();
+
+  } else if (window.location.hash === '#visualizacao' || window.location.search.includes('vis=1')) {
     // Hide ALL navigation and controls
     document.getElementById('modeBar').style.display = 'none';
     document.querySelectorAll('.nav').forEach(n => n.style.display = 'none');
     document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
     document.getElementById('screen-visualizacao').classList.add('active');
     // Add read-only banner
-    const app = document.getElementById('app') || document.querySelector('.app-shell') || document.body;
     const banner = document.createElement('div');
     banner.style.cssText = 'background:#1a1a2e;border-bottom:2px solid #c07aff;padding:8px 16px;text-align:center;font-size:12px;color:#c07aff;font-weight:600';
     banner.textContent = '👁️ MODO VISUALIZAÇÃO — Somente Leitura';
     document.body.insertBefore(banner, document.body.firstChild);
     renderVis();
   }
+}
+
+function renderFuncMode() {
+  var q = (document.getElementById('funcSearch') ? document.getElementById('funcSearch').value.trim() : '');
+  var el = document.getElementById('funcList');
+  if (!el) return;
+
+  // Se não digitou nada, mostra instrução
+  if (!q) {
+    el.innerHTML = '<div style="text-align:center;padding:40px 0;color:var(--text3)"><div style="font-size:40px;margin-bottom:12px">🔍</div><div style="font-size:15px;font-weight:600;color:var(--text2)">Digite seu nome acima</div><div style="font-size:13px;margin-top:6px">para ver se tem encomenda esperando por você</div></div>';
+    return;
+  }
+
+  var list = packages.filter(function(p) {
+    return (p.status === 'Em Estoque') &&
+           (p.recipientType === 'Funcionário' || p.recipientType === 'Compras') &&
+           p.recipient.toLowerCase().includes(q.toLowerCase());
+  });
+
+  if (!list.length) {
+    el.innerHTML = '<div style="text-align:center;padding:40px 0;color:var(--text3)"><div style="font-size:40px;margin-bottom:12px">✅</div><div style="font-size:16px;font-weight:600;color:var(--text2)">Nenhuma encomenda aguardando</div><div style="font-size:13px;margin-top:6px">Não encontramos encomendas para "<b>' + q + '</b>"</div></div>';
+    return;
+  }
+
+  el.innerHTML = list.map(function(p) {
+    return '<div style="background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px;margin-bottom:10px;border-left:4px solid var(--accent4)">' +
+      '<div style="font-size:17px;font-weight:700;color:var(--text);margin-bottom:4px">📦 ' + p.recipient + '</div>' +
+      '<div style="font-size:12px;color:var(--text2);margin-bottom:10px">' + (p.room || 'Setor não informado') + '</div>' +
+      '<div style="display:flex;gap:8px;flex-wrap:wrap">' +
+        '<span style="font-size:11px;padding:4px 10px;border-radius:20px;background:var(--surface2);color:var(--text2)">🚚 ' + (p.carrier||'') + '</span>' +
+        '<span style="font-size:11px;padding:4px 10px;border-radius:20px;background:var(--surface2);color:var(--accent4)">🕐 Chegou ' + (p.arrivalDate ? new Date(p.arrivalDate).toLocaleDateString('pt-BR') + ' às ' + new Date(p.arrivalDate).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}) : '—') + '</span>' +
+      '</div>' +
+      '<div style="margin-top:10px;padding:10px;background:var(--surface2);border-radius:10px;font-size:13px;color:var(--accent2);font-weight:600;text-align:center">✅ Retire na portaria!</div>' +
+    '</div>';
+  }).join('');
 }
 
 function setVisTab(tab) {
