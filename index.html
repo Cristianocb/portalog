@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
@@ -701,6 +700,15 @@
       <div class="card">
         <div class="card-title">Destinatário</div>
 
+        <div class="field" style="position:relative">
+          <label>Nome do Destinatário</label>
+          <input type="text" id="recipientName" placeholder="Nome completo" autocomplete="off"
+            oninput="this.value=this.value.replace(/\b\w/g,l=>l.toUpperCase());showNameSuggestions(this.value)"
+            onblur="setTimeout(()=>hideNameSuggestions(),200)">
+          <div id="nameSuggestions" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:10px;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,.3);max-height:180px;overflow-y:auto"></div>
+        </div>
+
+        <div class="field" style="position:relative">
         <div class="field">
           <label>Tipo de Destinatário</label>
           <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
@@ -710,15 +718,6 @@
           </div>
         </div>
 
-        <div class="field" style="position:relative">
-          <label>Nome do Destinatário</label>
-          <input type="text" id="recipientName" placeholder="Nome completo" autocomplete="off"
-            oninput="this.value=this.value.replace(/\b\w/g,l=>l.toUpperCase());showNameSuggestions(this.value)"
-            onblur="setTimeout(()=>hideNameSuggestions(),200)">
-          <div id="nameSuggestions" style="display:none;position:absolute;top:100%;left:0;right:0;background:var(--surface);border:1px solid var(--border);border-radius:10px;z-index:200;box-shadow:0 8px 24px rgba(0,0,0,.3);max-height:180px;overflow-y:auto"></div>
-        </div>
-
-        <div class="field">
           <label>Sala / Setor</label>
           <input type="text" id="recipientRoom" placeholder="Ex: Sala 302 / RH / TI">
         </div>
@@ -726,6 +725,14 @@
         <div class="field">
           <label>Observação (opcional)</label>
           <textarea id="obsField" placeholder="Ex: Caixa amassada, volume frágil..." rows="2" style="width:100%;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 13px;color:var(--text);font-family:'DM Sans',sans-serif;font-size:14px;outline:none;resize:vertical;min-height:64px;transition:border-color .2s"></textarea>
+        </div>
+        <div class="field">
+          <label>Quantidade de volumes <span style="color:var(--text3);font-size:11px">(registra várias de uma vez)</span></label>
+          <div style="display:flex;align-items:center;gap:12px">
+            <button type="button" onclick="changeQty(-1)" style="width:40px;height:40px;border-radius:10px;border:1px solid var(--border);background:var(--surface3);color:var(--text);font-size:20px;cursor:pointer;flex-shrink:0">−</button>
+            <span id="qtyDisplay" style="font-size:22px;font-weight:700;min-width:32px;text-align:center">1</span>
+            <button type="button" onclick="changeQty(1)" style="width:40px;height:40px;border-radius:10px;border:1px solid var(--border);background:var(--surface3);color:var(--text);font-size:20px;cursor:pointer;flex-shrink:0">+</button>
+          </div>
         </div>
       </div>
 
@@ -768,13 +775,19 @@
       </div>
 
       <div class="search-row">
-        <div class="search-wrap" style="flex:1">
+        <div class="search-wrap" style="flex:1;position:relative">
           <span class="search-icon">🔍</span>
-          <input type="text" id="stockSearch" placeholder="Buscar por nome ou rastreio..." oninput="renderStock()">
+          <input type="text" id="stockSearch" placeholder="Buscar por nome ou rastreio..." oninput="renderStock();toggleClearBtn('stockSearch','clearStock')">
+          <button id="clearStock" onclick="clearSearch('stockSearch','clearStock',renderStock)" style="display:none;position:absolute;right:8px;top:50%;transform:translateY(-50%);background:none;border:none;color:var(--text2);font-size:18px;cursor:pointer;padding:4px">✕</button>
         </div>
         <button class="scan-btn" onclick="triggerScan('stockSearch', true)" title="Scan">
           <span>⬛</span>
         </button>
+      </div>
+      <div style="display:flex;gap:8px;margin-bottom:8px">
+        <button onclick="setStockFilter('todos',this)" id="filterTodos" style="flex:1;padding:7px;border-radius:10px;border:1px solid var(--accent);background:var(--accent);color:#fff;font-size:12px;font-weight:700;cursor:pointer">Todos</button>
+        <button onclick="setStockFilter('Funcionário',this)" id="filterFunc" style="flex:1;padding:7px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer">👷 Funcionários</button>
+        <button onclick="setStockFilter('Aluno',this)" id="filterAluno" style="flex:1;padding:7px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer">🎓 Alunos</button>
       </div>
 
       <button onclick="shareWhatsApp()" style="width:100%;padding:12px;border-radius:14px;border:none;background:linear-gradient(135deg,#25d366,#1aaa52);color:#fff;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:12px;box-shadow:0 4px 16px rgba(37,211,102,.25)">📲 Compartilhar Pendentes no WhatsApp</button>
@@ -900,7 +913,11 @@
     <div class="modal-sub" id="modalSub"></div>
 
     <div id="modalPhotoWrap">
-      <div class="detail-photo" id="modalPhoto">📦</div>
+      <div class="detail-photo" id="modalPhoto" onclick="zoomPhoto()" style="cursor:pointer">📦</div>
+    </div>
+    <!-- Photo zoom overlay -->
+    <div id="photoZoomOverlay" onclick="this.style.display='none'" style="display:none;position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(0,0,0,.92);z-index:9999;align-items:center;justify-content:center;cursor:zoom-out">
+      <img id="photoZoomImg" src="" style="max-width:95vw;max-height:95vh;border-radius:12px;object-fit:contain">
     </div>
 
     <div id="modalDetails"></div>
@@ -1274,10 +1291,18 @@ function confirmScan() {
 }
 
 function closeScan() {
-  stopScanner().then(() => {
-    document.getElementById('modal-scan').classList.remove('open');
-    setScanStatus('');
-  });
+  // Force close immediately, don't wait for scanner to stop
+  document.getElementById('modal-scan').classList.remove('open');
+  setScanStatus('');
+  // Stop scanner in background
+  try {
+    if (html5Scanner) {
+      html5Scanner.stop().catch(() => {}).then(() => {
+        try { html5Scanner.clear(); } catch(e) {}
+        html5Scanner = null;
+      });
+    }
+  } catch(e) { html5Scanner = null; }
 }
 
 document.getElementById('scanInput').addEventListener('keydown', (e) => {
@@ -1331,7 +1356,7 @@ function resetForm() {
 function updateStats() {
   const inStock = packages.filter(p => p.status === 'Em Estoque');
   const delivered = packages.filter(p => p.status === 'Entregue');
-  const todayIn = inStock.filter(p => formatDate(p.arrivalDate) === todayStr());
+  const todayIn = packages.filter(p => formatDate(p.arrivalDate) === todayStr() && (p.status === 'Em Estoque' || p.status === 'No Setor de Cópias'));
   const inCopies = packages.filter(p => p.status === 'No Setor de Cópias');
   const alunoStock = packages.filter(p => p.status === 'Em Estoque' && p.recipientType === 'Aluno');
   const today = new Date().toLocaleDateString('pt-BR');
@@ -1357,9 +1382,47 @@ function updateStats() {
 // =====================
 // RENDER STOCK
 // =====================
+let stockTypeFilter = 'todos';
+function setStockFilter(type, el) {
+  stockTypeFilter = type;
+  document.querySelectorAll('#screen-stock .search-row + div button').forEach(b => {
+    b.style.background = 'var(--surface2)';
+    b.style.color = 'var(--text2)';
+    b.style.borderColor = 'var(--border)';
+  });
+  el.style.background = 'var(--accent)';
+  el.style.color = '#fff';
+  el.style.borderColor = 'var(--accent)';
+  renderStock();
+}
+
+function toggleClearBtn(inputId, btnId) {
+  var val = document.getElementById(inputId).value;
+  var btn = document.getElementById(btnId);
+  if (btn) btn.style.display = val ? 'block' : 'none';
+}
+
+function clearSearch(inputId, btnId, renderFn) {
+  document.getElementById(inputId).value = '';
+  var btn = document.getElementById(btnId);
+  if (btn) btn.style.display = 'none';
+  renderFn();
+}
+
+function zoomPhoto() {
+  var img = document.querySelector('#modalPhoto img');
+  if (!img) return;
+  var overlay = document.getElementById('photoZoomOverlay');
+  var zoomImg = document.getElementById('photoZoomImg');
+  zoomImg.src = img.src;
+  overlay.style.display = 'flex';
+}
+
 function renderStock() {
   const search = (document.getElementById('stockSearch').value || '').toLowerCase();
-  const list = packages.filter(p => p.status === 'Em Estoque').filter(p => {
+  let list = packages.filter(p => p.status === 'Em Estoque');
+  if (stockTypeFilter !== 'todos') list = list.filter(p => p.recipientType === stockTypeFilter);
+  list = list.filter(p => {
     if (!search) return true;
     return p.recipient.toLowerCase().includes(search) ||
            cleanTracking(p.trackingCode).toLowerCase().includes(search) ||
@@ -1423,9 +1486,10 @@ function pkgCardHTML(pkg, isHistory) {
     ? `<span class="badge badge-delivered">✓ Entregue</span>`
     : `<span class="badge badge-stock">⏳ Em Estoque</span>`;
 
+  const typeBadge = pkg.recipientType === 'Funcionário' ? '👷' : pkg.recipientType === 'Compras' ? '🛒' : '🎓';
   const meta = isHistory
     ? `<span>Retirado por: <b>${pkg.withdrawnBy || '—'}</b></span>`
-    : `<span>${pkg.room || 'Setor não inf.'}</span>`;
+    : `<span>${typeBadge} ${pkg.recipientType || ''} · ${pkg.room || 'Setor não inf.'}</span>`;
 
   return `
     <div class="pkg-card ${isHistory ? 'delivered' : ''}" onclick="openDetail('${pkg.id}')">
@@ -1713,6 +1777,15 @@ function showScreen(name) {
 }
 
 // =====================
+// QUANTITY
+// =====================
+let pkgQty = 1;
+function changeQty(delta) {
+  pkgQty = Math.max(1, Math.min(30, pkgQty + delta));
+  document.getElementById('qtyDisplay').textContent = pkgQty;
+}
+
+// =====================
 // OVERRIDE registerPackage
 // =====================
 async function registerPackage() {
@@ -1727,18 +1800,24 @@ async function registerPackage() {
   try {
     let photoData = null;
     if (capturedPhoto) photoData = await compressPhoto(capturedPhoto, 600, 0.6);
-    await packagesCol.add({
-      photo: photoData,
-      trackingCode: document.getElementById('trackingCode').value.trim() || '(sem rastreio)',
-      carrier: selectedCarrier,
-      recipient, room,
-      observation: obs || null,
-      recipientType: selRtypeVal,
-      arrivalDate: new Date().toISOString(),
-      status: 'Em Estoque',
-      withdrawnBy: null, withdrawalDate: null,
-      sentToCopiesDate: null, deliveredInCopiesBy: null, deliveredInCopiesDate: null,
-    });
+    const qty = pkgQty || 1;
+    const tracking = document.getElementById('trackingCode').value.trim() || '(sem rastreio)';
+    for (let i = 0; i < qty; i++) {
+      await packagesCol.add({
+        photo: photoData,
+        trackingCode: qty > 1 ? (tracking === '(sem rastreio)' ? '(sem rastreio)' : tracking + (qty > 1 ? ' (' + (i+1) + '/' + qty + ')' : '')) : tracking,
+        carrier: selectedCarrier,
+        recipient, room,
+        observation: obs || null,
+        recipientType: selRtypeVal,
+        arrivalDate: new Date().toISOString(),
+        status: 'Em Estoque',
+        withdrawnBy: null, withdrawalDate: null,
+        sentToCopiesDate: null, deliveredInCopiesBy: null, deliveredInCopiesDate: null,
+      });
+    }
+    pkgQty = 1;
+    document.getElementById('qtyDisplay').textContent = '1';
 
     if (batchMode) {
       // Batch mode: clear only photo and tracking, keep everything else
@@ -1767,7 +1846,7 @@ async function registerPackage() {
       document.getElementById('photoOverlay').style.display = 'none';
       document.getElementById('photoInput').value = '';
       updateDateTimeDisplay();
-      showToast('✅ Encomenda registrada com sucesso!');
+      showToast(qty > 1 ? '✅ ' + qty + ' encomendas registradas!' : '✅ Encomenda registrada com sucesso!');
     }
   } catch(e) { showToast('❌ Erro: ' + e.message, 'error'); }
   finally { btns.forEach(b => { b.textContent = '✅ Registrar Chegada'; b.disabled = false; }); }
