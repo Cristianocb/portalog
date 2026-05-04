@@ -432,6 +432,7 @@
   .carrier-shopee { background: rgba(255,120,66,0.12); color: #ff7842; border-color: rgba(255,120,66,0.2); }
   .carrier-jadlog { background: rgba(150,100,255,0.12); color: #c07aff; border-color: rgba(150,100,255,0.2); }
   .carrier-amazon { background: rgba(255,153,0,0.1); color: #ff9900; border-color: rgba(255,153,0,0.2); }
+  .carrier-tiktok { background: rgba(0,0,0,0.2); color: #ff0050; border-color: rgba(255,0,80,0.3); }
 
   /* EMPTY STATE */
   .empty {
@@ -595,6 +596,7 @@
   </div>
 
   <!-- MODE BAR -->
+  <button id="btnRefresh" onclick="forceRefresh()" style="position:fixed;bottom:80px;right:16px;width:48px;height:48px;border-radius:50%;background:var(--accent);border:none;color:#fff;font-size:22px;cursor:pointer;z-index:100;box-shadow:0 4px 16px rgba(0,0,0,.4)">🔄</button>
   <div id="modeBar" style="display:flex;margin:10px 16px 0;background:var(--surface2);border-radius:14px;border:1px solid var(--border);padding:4px;gap:4px">
     <button id="modePortaria" onclick="setMode('portaria')" style="flex:1;padding:9px 8px;border-radius:8px;border:none;background:var(--surface3);color:var(--accent);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer">🏢 Portaria</button>
     <button id="modeCopias" onclick="setMode('copias')" style="flex:1;padding:9px 8px;border-radius:8px;border:none;background:transparent;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer">📋 Setor de Cópias</button>
@@ -689,6 +691,9 @@
             <div class="carrier-opt" data-carrier="Amazon" onclick="selectCarrier(this)">
               <span class="c-icon">📦</span> Amazon
             </div>
+            <div class="carrier-opt" data-carrier="TikTok Shop" onclick="selectCarrier(this)">
+              <span class="c-icon">🎵</span> TikTok Shop
+            </div>
             <div class="carrier-opt" data-carrier="Outro" onclick="selectCarrier(this)">
               <span class="c-icon">🚚</span> Outro
             </div>
@@ -762,6 +767,16 @@
     <div class="screen" id="screen-stock">
       <div class="section-title">Em Estoque</div>
       <div class="section-sub" id="stockSubtitle">Encomendas aguardando retirada</div>
+      <button id="btnBatchDelivery" onclick="toggleBatchDelivery()" style="width:100%;margin-bottom:8px;padding:10px;border-radius:12px;border:1px solid var(--border);background:var(--surface2);color:var(--text2);font-size:13px;font-weight:600;cursor:pointer">📦 Modo Entrega em Lote</button>
+      <div id="batchDeliveryPanel" style="display:none;background:var(--surface2);border-radius:12px;padding:12px;margin-bottom:8px">
+        <div style="font-size:13px;font-weight:700;color:#c07aff;margin-bottom:8px">📦 Selecione as encomendas para dar baixa</div>
+        <div class="field">
+          <label>Nome de quem retirou</label>
+          <input type="text" id="batchWithdrawName" placeholder="Nome completo">
+        </div>
+        <button class="btn btn-success" onclick="confirmBatchDelivery()" style="width:100%;margin-top:8px">✅ Confirmar Entregas Selecionadas</button>
+        <button onclick="toggleBatchDelivery()" style="width:100%;margin-top:6px;padding:8px;border-radius:10px;border:1px solid var(--border);background:none;color:var(--text2);font-size:12px;cursor:pointer">✖ Cancelar</button>
+      </div>
 
       <div class="stats-row">
         <div class="stat-card accent">
@@ -1037,22 +1052,62 @@ let scanTarget = null;
 let scanCallback = null;
 let activeMonthFilter = null;
 
-// Listen in real-time to all packages
-function initRealtimeSync() {
-  showLoading(true);
-  packagesCol.orderBy('arrivalDate', 'desc').onSnapshot(snapshot => {
+// Smart fetch - busca dados do Firebase sem onSnapshot
+// Economiza leituras usando polling a cada 30s em vez de tempo real
+let _syncInterval = null;
+let _lastFetch = 0;
+
+async function cleanOldPackages() {
+  try {
+    var cutoff = new Date();
+    cutoff.setDate(cutoff.getDate() - 70);
+    var old = await packagesCol.where('arrivalDate', '<', cutoff.toISOString()).get();
+    var batch = db.batch();
+    old.docs.forEach(function(doc) { batch.delete(doc.ref); });
+    if (old.docs.length > 0) await batch.commit();
+  } catch(e) {}
+}
+
+async function fetchPackages(silent) {
+  if (!silent) showLoading(true);
+  try {
+    const snapshot = await packagesCol.orderBy('arrivalDate', 'desc').get();
     packages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    _lastFetch = Date.now();
     showLoading(false);
     updateStats();
     renderStock();
     buildMonthFilters();
     renderHistory();
-    if (document.getElementById('screen-visualizacao').classList.contains('active')) renderVis();
+    if (document.getElementById('screen-visualizacao') && document.getElementById('screen-visualizacao').classList.contains('active')) renderVis();
     if (funcMode) renderFuncMode();
-  }, err => {
+    // Update refresh button
+    var btn = document.getElementById('btnRefresh');
+    if (btn) btn.textContent = '🔄';
+  } catch(err) {
     showLoading(false);
-    showToast('⚠️ Erro de conexão com o servidor', 'error');
+    if (!silent) showToast('⚠️ Erro de conexão com o servidor', 'error');
+  }
+}
+
+function initRealtimeSync() {
+  fetchPackages(false);
+  // Atualiza a cada 30 segundos
+  _syncInterval = setInterval(function() { fetchPackages(true); }, 30000);
+  // Atualiza quando volta para a aba/app
+  document.addEventListener('visibilitychange', function() {
+    if (!document.hidden) {
+      var agora = Date.now();
+      if (agora - _lastFetch > 15000) fetchPackages(true);
+    }
   });
+}
+
+// Força atualização manual
+function forceRefresh() {
+  var btn = document.getElementById('btnRefresh');
+  if (btn) btn.textContent = '⏳';
+  fetchPackages(false);
 }
 
 function showLoading(on) {
@@ -1102,6 +1157,7 @@ function carrierClass(carrier) {
     'Mercado Livre': 'carrier-mercadolivre',
     'Shopee': 'carrier-shopee',
     'Jadlog': 'carrier-jadlog',
+    'TikTok Shop': 'carrier-tiktok',
     'Amazon': 'carrier-amazon',
   };
   return map[carrier] || '';
@@ -1113,6 +1169,7 @@ function carrierEmoji(carrier) {
     'Mercado Livre': '🛒',
     'Shopee': '🟠',
     'Jadlog': '🟣',
+    'TikTok Shop': '🎵',
     'Amazon': '📦',
     'Outro': '🚚',
   };
@@ -1292,18 +1349,27 @@ function confirmScan() {
 }
 
 function closeScan() {
-  // Force close immediately, don't wait for scanner to stop
-  document.getElementById('modal-scan').classList.remove('open');
+  // Force close modal FIRST - works on mobile
+  var modal = document.getElementById('modal-scan');
+  if (modal) modal.classList.remove('open');
   setScanStatus('');
-  // Stop scanner in background
+  // Destroy scanner completely
+  var s = html5Scanner;
+  html5Scanner = null;
+  if (s) {
+    try { s.stop(); } catch(e) {}
+    try { s.clear(); } catch(e) {}
+    // Also remove video elements left behind by html5-qrcode
+    var reader = document.getElementById('qr-reader');
+    if (reader) reader.innerHTML = '';
+  }
+  // Release camera via MediaStream if still active
   try {
-    if (html5Scanner) {
-      html5Scanner.stop().catch(() => {}).then(() => {
-        try { html5Scanner.clear(); } catch(e) {}
-        html5Scanner = null;
-      });
-    }
-  } catch(e) { html5Scanner = null; }
+    navigator.mediaDevices && navigator.mediaDevices.getUserMedia &&
+    document.querySelectorAll('video').forEach(function(v) {
+      if (v.srcObject) { v.srcObject.getTracks().forEach(function(t){ t.stop(); }); v.srcObject = null; }
+    });
+  } catch(e) {}
 }
 
 document.getElementById('scanInput').addEventListener('keydown', (e) => {
@@ -1383,6 +1449,77 @@ function updateStats() {
 // =====================
 // RENDER STOCK
 // =====================
+// =====================
+// BATCH DELIVERY MODE
+// =====================
+let batchDeliveryMode = false;
+let batchDeliverySelected = new Set();
+
+function toggleBatchDelivery() {
+  batchDeliveryMode = !batchDeliveryMode;
+  batchDeliverySelected.clear();
+  var panel = document.getElementById('batchDeliveryPanel');
+  var btn = document.getElementById('btnBatchDelivery');
+  if (batchDeliveryMode) {
+    panel.style.display = 'block';
+    btn.textContent = '📦 Modo Lote Ativado — toque nas encomendas';
+    btn.style.background = '#2d1b69';
+    btn.style.color = '#c07aff';
+    btn.style.borderColor = '#c07aff';
+  } else {
+    panel.style.display = 'none';
+    btn.textContent = '📦 Modo Entrega em Lote';
+    btn.style.background = 'var(--surface2)';
+    btn.style.color = 'var(--text2)';
+    btn.style.borderColor = 'var(--border)';
+  }
+  renderStock();
+}
+
+function toggleBatchSelect(id, el) {
+  if (batchDeliverySelected.has(id)) {
+    batchDeliverySelected.delete(id);
+    el.style.borderColor = 'var(--border)';
+    el.style.background = 'var(--surface)';
+  } else {
+    batchDeliverySelected.add(id);
+    el.style.borderColor = '#c07aff';
+    el.style.background = '#1a0f3a';
+  }
+  // Update count
+  var btn = document.getElementById('btnBatchDelivery');
+  if (btn && batchDeliveryMode) {
+    btn.textContent = batchDeliverySelected.size > 0
+      ? '📦 ' + batchDeliverySelected.size + ' selecionada(s)'
+      : '📦 Modo Lote Ativado — toque nas encomendas';
+  }
+}
+
+async function confirmBatchDelivery() {
+  var name = document.getElementById('batchWithdrawName').value.trim();
+  if (!name) { showToast('⚠️ Informe o nome de quem retirou', 'error'); return; }
+  if (batchDeliverySelected.size === 0) { showToast('⚠️ Selecione pelo menos uma encomenda', 'error'); return; }
+
+  var ids = Array.from(batchDeliverySelected);
+  var batch = db.batch();
+  ids.forEach(function(id) {
+    batch.update(packagesCol.doc(id), {
+      status: 'Entregue',
+      withdrawnBy: name,
+      withdrawalDate: new Date().toISOString()
+    });
+  });
+
+  try {
+    await batch.commit();
+    showToast('✅ ' + ids.length + ' encomenda(s) entregue(s) para ' + name + '!');
+    toggleBatchDelivery();
+    fetchPackages(true);
+  } catch(e) {
+    showToast('❌ Erro ao salvar. Tente novamente.', 'error');
+  }
+}
+
 let stockTypeFilter = 'todos';
 function setStockFilter(type, el) {
   stockTypeFilter = type;
@@ -1493,7 +1630,7 @@ function pkgCardHTML(pkg, isHistory) {
     : `<span>${typeBadge} ${pkg.recipientType || ''} · ${pkg.room || 'Setor não inf.'}</span>`;
 
   return `
-    <div class="pkg-card ${isHistory ? 'delivered' : ''}" onclick="openDetail('${pkg.id}')">
+    <div class="pkg-card ${isHistory ? 'delivered' : ''}" id="card-${pkg.id}" onclick="${isHistory ? `openDetail('${pkg.id}')` : `batchDeliveryMode ? toggleBatchSelect('${pkg.id}', this) : openDetail('${pkg.id}')`}">
       ${thumb}
       <div class="pkg-info">
         <div class="pkg-name">${pkg.recipient}</div>
@@ -1848,6 +1985,7 @@ async function registerPackage() {
       document.getElementById('photoInput').value = '';
       updateDateTimeDisplay();
       showToast(qty > 1 ? '✅ ' + qty + ' encomendas registradas!' : '✅ Encomenda registrada com sucesso!');
+      setTimeout(function(){ fetchPackages(true); }, 1000);
     }
   } catch(e) { showToast('❌ Erro: ' + e.message, 'error'); }
   finally { btns.forEach(b => { b.textContent = '✅ Registrar Chegada'; b.disabled = false; }); }
@@ -2264,6 +2402,7 @@ if ('serviceWorker' in navigator) {
 
 // Start Firebase real-time sync
 initRealtimeSync();
+cleanOldPackages();
 updateDateTimeDisplay();
 initVisMode();
 </script>
