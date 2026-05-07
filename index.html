@@ -1063,7 +1063,7 @@ async function fetchPackages(silent) {
   try {
     const { data, error } = await sbClient.from('Encomendas').select('*').order('arrivalDate', { ascending: false });
     if (error) throw error;
-    const newPackages = (data || []).map(row => ({ id: String(row.id), ...row }));
+    const newPackages = (data || []).map(row => ({ id: String(row.id), ...row, _numId: row.id }));
     _lastFetch = Date.now();
     showLoading(false);
 
@@ -1127,7 +1127,7 @@ async function savePackage(pkg) {
 }
 
 async function updatePackage(id, fields) {
-  await sbClient.from('Encomendas').update(fields).eq('id', id);
+  await sbClient.from('Encomendas').update(fields).eq('id', Number(id));
 }
 
 // =====================
@@ -1515,7 +1515,7 @@ async function confirmBatchDelivery() {
         status: 'Entregue',
         withdrawnBy: name,
         withdrawalDate: new Date().toISOString()
-      }).eq('id', id);
+      }).eq('id', Number(id));
     }
     showToast('✅ ' + ids.length + ' encomenda(s) entregue(s) para ' + name + '!');
     toggleBatchDelivery();
@@ -1735,7 +1735,7 @@ function saveEdit() {
     recipient: name,
     room: room,
     recipientType: type
-  }).eq('id', currentPackageId).then(({error}) => {
+  }).eq('id', Number(currentPackageId)).then(({error}) => {
     if (error) showToast('❌ Erro ao salvar', 'error');
     else { showToast('✅ Dados atualizados!'); closeModal(); fetchPackages(true); }
   });
@@ -1749,7 +1749,7 @@ function revertDelivery() {
     withdrawalDate: null,
     deliveredInCopiesBy: null,
     deliveredInCopiesDate: null
-  }).eq('id', currentPackageId).then(({error}) => {
+  }).eq('id', Number(currentPackageId)).then(({error}) => {
     if (error) showToast('❌ Erro ao reverter', 'error');
     else { showToast('↩️ Entrega revertida!'); closeModal(); fetchPackages(true); }
   });
@@ -1857,7 +1857,7 @@ function confirmDelivery() {
       status: 'Entregue',
       withdrawnBy: name,
       withdrawalDate: new Date().toISOString(),
-    }).eq('id', pkgId).then(({error}) => {
+    }).eq('id', Number(pkgId)).then(({error}) => {
       if (error) showToast('❌ Erro ao salvar. Verifique a conexão.', 'error');
       else fetchPackages(true);
     });
@@ -2028,7 +2028,7 @@ async function sendToCopies() {
   try {
     // batch replaced by supabase loop
     for (const id of selCopies) {
-      await sbClient.from('Encomendas').update({status:'No Setor de Cópias',sentToCopiesDate:new Date().toISOString()}).eq('id', id);
+      await sbClient.from('Encomendas').update({status:'No Setor de Cópias',sentToCopiesDate:new Date().toISOString()}).eq('id', Number(id));
     }
     const n=selCopies.size; selCopies.clear(); updateSendBar();
     showToast(`📤 ${n} encomenda${n>1?'s':''} enviada${n>1?'s':''} para Cópias!`);
