@@ -13,8 +13,7 @@
 <link rel="apple-touch-icon" href="/icon-192.png">
 <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet">
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
     --bg: #0d0f14;
@@ -1029,24 +1028,14 @@
 
 <script>
 // =====================
-// FIREBASE CONFIG
+// SUPABASE CONFIG
 // =====================
-const firebaseConfig = {
-  apiKey: "AIzaSyBfICxNMxTiRy05663-TSW-2b0Kg0D295M",
-  authDomain: "portalog.firebaseapp.com",
-  projectId: "portalog",
-  storageBucket: "portalog.firebasestorage.app",
-  messagingSenderId: "621102213436",
-  appId: "1:621102213436:web:e5465ae6e39a9eeeac5639",
-  measurementId: "G-MPKPS71LRQ"
-};
-
-firebase.initializeApp(firebaseConfig);
-const db = firebase.firestore();
-const packagesCol = db.collection('encomendas');
+const SUPABASE_URL = 'https://ilvhwgmjapengfzswmmq.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_M99yEHcyZEJNKZAS79OUCw_Qutlxb4e';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // =====================
-// DATA LAYER (Firebase)
+// DATA LAYER (Supabase)
 // =====================
 let packages = [];
 let selectedCarrier = '';
@@ -1065,18 +1054,16 @@ async function cleanOldPackages() {
   try {
     var cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - 70);
-    var old = await packagesCol.where('arrivalDate', '<', cutoff.toISOString()).get();
-    var batch = db.batch();
-    old.docs.forEach(function(doc) { batch.delete(doc.ref); });
-    if (old.docs.length > 0) await batch.commit();
+    await supabase.from('Encomendas').delete().lt('arrivalDate', cutoff.toISOString());
   } catch(e) {}
 }
 
 async function fetchPackages(silent) {
   if (!silent) showLoading(true);
   try {
-    const snapshot = await packagesCol.orderBy('arrivalDate', 'desc').get();
-    const newPackages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const { data, error } = await supabase.from('Encomendas').select('*').order('arrivalDate', { ascending: false });
+    if (error) throw error;
+    const newPackages = (data || []).map(row => ({ id: String(row.id), ...row }));
     _lastFetch = Date.now();
     showLoading(false);
 
@@ -1136,11 +1123,11 @@ function showLoading(on) {
 
 async function savePackage(pkg) {
   const { id, ...data } = pkg;
-  await packagesCol.doc(id).set(data);
+  await supabase.from('Encomendas').upsert({id, ...data});
 }
 
 async function updatePackage(id, fields) {
-  await packagesCol.doc(id).update(fields);
+  await supabase.from('Encomendas').update(fields).eq('id', id);
 }
 
 // =====================
@@ -1522,17 +1509,14 @@ async function confirmBatchDelivery() {
   if (batchDeliverySelected.size === 0) { showToast('⚠️ Selecione pelo menos uma encomenda', 'error'); return; }
 
   var ids = Array.from(batchDeliverySelected);
-  var batch = db.batch();
-  ids.forEach(function(id) {
-    batch.update(packagesCol.doc(id), {
-      status: 'Entregue',
-      withdrawnBy: name,
-      withdrawalDate: new Date().toISOString()
-    });
-  });
-
   try {
-    await batch.commit();
+    for (const id of ids) {
+      await supabase.from('Encomendas').update({
+        status: 'Entregue',
+        withdrawnBy: name,
+        withdrawalDate: new Date().toISOString()
+      }).eq('id', id);
+    }
     showToast('✅ ' + ids.length + ' encomenda(s) entregue(s) para ' + name + '!');
     toggleBatchDelivery();
     fetchPackages(true);
@@ -1747,31 +1731,27 @@ function saveEdit() {
   var room = document.getElementById('editRoom').value.trim();
   var type = document.getElementById('editType').value;
   if (!name) { showToast('⚠️ Informe o nome', 'error'); return; }
-  packagesCol.doc(currentPackageId).update({
+  supabase.from('Encomendas').update({
     recipient: name,
     room: room,
     recipientType: type
-  }).then(function() {
-    showToast('✅ Dados atualizados!');
-    closeModal();
-  }).catch(function(e) {
-    showToast('❌ Erro ao salvar', 'error');
+  }).eq('id', currentPackageId).then(({error}) => {
+    if (error) showToast('❌ Erro ao salvar', 'error');
+    else { showToast('✅ Dados atualizados!'); closeModal(); fetchPackages(true); }
   });
 }
 
 function revertDelivery() {
   if (!confirm('Reverter esta entrega para Em Estoque?')) return;
-  packagesCol.doc(currentPackageId).update({
+  supabase.from('Encomendas').update({
     status: 'Em Estoque',
     withdrawnBy: null,
     withdrawalDate: null,
     deliveredInCopiesBy: null,
     deliveredInCopiesDate: null
-  }).then(function() {
-    showToast('↩️ Entrega revertida!');
-    closeModal();
-  }).catch(function(e) {
-    showToast('❌ Erro ao reverter', 'error');
+  }).eq('id', currentPackageId).then(({error}) => {
+    if (error) showToast('❌ Erro ao reverter', 'error');
+    else { showToast('↩️ Entrega revertida!'); closeModal(); fetchPackages(true); }
   });
 }
 
@@ -1873,12 +1853,13 @@ function confirmDelivery() {
   setTimeout(function() {
     closeModal();
     showToast('✅ Retirada registrada para ' + name);
-    packagesCol.doc(pkgId).update({
+    supabase.from('Encomendas').update({
       status: 'Entregue',
       withdrawnBy: name,
       withdrawalDate: new Date().toISOString(),
-    }).catch(function(e) {
-      showToast('❌ Erro ao salvar. Verifique a conexão.', 'error');
+    }).eq('id', pkgId).then(({error}) => {
+      if (error) showToast('❌ Erro ao salvar. Verifique a conexão.', 'error');
+      else fetchPackages(true);
     });
   }, 300);
 }
@@ -1962,9 +1943,9 @@ async function registerPackage() {
     const qty = pkgQty || 1;
     const tracking = document.getElementById('trackingCode').value.trim() || '(sem rastreio)';
     for (let i = 0; i < qty; i++) {
-      await packagesCol.add({
+      const { error: addErr } = await supabase.from('Encomendas').insert({
         photo: photoData,
-        trackingCode: qty > 1 ? (tracking === '(sem rastreio)' ? '(sem rastreio)' : tracking + (qty > 1 ? ' (' + (i+1) + '/' + qty + ')' : '')) : tracking,
+        trackingCode: qty > 1 ? (tracking === '(sem rastreio)' ? '(sem rastreio)' : tracking + ' (' + (i+1) + '/' + qty + ')') : tracking,
         carrier: selectedCarrier,
         recipient, room,
         observation: obs || null,
@@ -1974,6 +1955,7 @@ async function registerPackage() {
         withdrawnBy: null, withdrawalDate: null,
         sentToCopiesDate: null, deliveredInCopiesBy: null, deliveredInCopiesDate: null,
       });
+      if (addErr) throw addErr;
     }
     pkgQty = 1;
     document.getElementById('qtyDisplay').textContent = '1';
@@ -2044,9 +2026,10 @@ function updateSendBar() {
 async function sendToCopies() {
   if(!selCopies.size)return;
   try {
-    const batch=db.batch();
-    selCopies.forEach(id=>batch.update(packagesCol.doc(id),{status:'No Setor de Cópias',sentToCopiesDate:new Date().toISOString()}));
-    await batch.commit();
+    // batch replaced by supabase loop
+    for (const id of selCopies) {
+      await supabase.from('Encomendas').update({status:'No Setor de Cópias',sentToCopiesDate:new Date().toISOString()}).eq('id', id);
+    }
     const n=selCopies.size; selCopies.clear(); updateSendBar();
     showToast(`📤 ${n} encomenda${n>1?'s':''} enviada${n>1?'s':''} para Cópias!`);
   } catch(e){showToast('❌ Erro: '+e.message,'error');}
@@ -2129,7 +2112,7 @@ function confirmCopiesDelivery() {
   const pkgId = currentPackageId;
   closeModal();
   showToast('✅ ' + name + ' retirou a encomenda!');
-  packagesCol.doc(pkgId).update({
+  supabase.from('Encomendas').update({
     status: 'Entregue em Cópias',
     deliveredInCopiesBy: name,
     deliveredInCopiesDate: new Date().toISOString()
