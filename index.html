@@ -1082,6 +1082,9 @@ async function fetchPackages(silent) {
     var sid = activeScreen ? activeScreen.id : '';
     if (sid === 'screen-stock') renderStock();
     else if (sid === 'screen-history') { buildMonthFilters(); renderHistory(); }
+    else if (sid === 'screen-copies-out') renderCopiesOut();
+    else if (sid === 'screen-copies-stock') renderCopiesStock();
+    else if (sid === 'screen-copies-history') renderCopiesHistory();
     else if (sid === 'screen-visualizacao') renderVis();
     else if (sid === 'screen-busca') renderGlobalSearch();
     // Sempre atualiza stats
