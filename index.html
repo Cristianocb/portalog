@@ -1100,12 +1100,18 @@ async function fetchPackages(silent) {
 
 function initRealtimeSync() {
   fetchPackages(false);
-  // Atualiza quando volta para o app após 2 minutos de ausência
+
+  // Tempo real via Supabase - atualiza automaticamente quando dados mudam
+  sbClient
+    .channel('encomendas-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'Encomendas' }, function() {
+      fetchPackages(true);
+    })
+    .subscribe();
+
+  // Atualiza quando volta para o app
   document.addEventListener('visibilitychange', function() {
-    if (!document.hidden) {
-      var agora = Date.now();
-      if (agora - _lastFetch > 120000) fetchPackages(true);
-    }
+    if (!document.hidden) fetchPackages(true);
   });
 }
 
