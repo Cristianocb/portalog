@@ -2400,11 +2400,10 @@ function shareWhatsAppCopias() {
 // =====================
 // PWA SERVICE WORKER
 // =====================
+// Desregistra service worker para garantir sempre versão mais recente
 if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/sw.js')
-      .then(() => console.log('PortaLog SW registrado ✅'))
-      .catch(e => console.log('SW erro:', e));
+  navigator.serviceWorker.getRegistrations().then(function(regs) {
+    regs.forEach(function(reg) { reg.unregister(); });
   });
 }
 
