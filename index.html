@@ -1656,7 +1656,7 @@ function pkgCardHTML(pkg, isHistory) {
 // MODAL DETAIL
 // =====================
 function openDetail(id) {
-  const pkg = packages.find(p => p.id === id);
+  const pkg = packages.find(p => String(p.id) === String(id));
   if (!pkg) return;
   currentPackageId = id;
 
@@ -2326,7 +2326,7 @@ function closeVisDetail() {
 }
 
 function openVisDetail(id) {
-  const pkg = packages.find(p => p.id === id); if (!pkg) return;
+  const pkg = packages.find(p => String(p.id) === String(id)); if (!pkg) return;
   function fdt(s) { if(!s)return'—'; const d=new Date(s); return d.toLocaleDateString('pt-BR')+' às '+d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}); }
 
   var html = '';
