@@ -433,6 +433,7 @@
   .carrier-jadlog { background: rgba(150,100,255,0.12); color: #c07aff; border-color: rgba(150,100,255,0.2); }
   .carrier-amazon { background: rgba(255,153,0,0.1); color: #ff9900; border-color: rgba(255,153,0,0.2); }
   .carrier-tiktok { background: rgba(0,0,0,0.2); color: #ff0050; border-color: rgba(255,0,80,0.3); }
+  .carrier-dialogo { background: rgba(0,120,255,0.1); color: #4f8cff; border-color: rgba(0,120,255,0.2); }
 
   /* EMPTY STATE */
   .empty {
@@ -693,6 +694,9 @@
             </div>
             <div class="carrier-opt" data-carrier="TikTok Shop" onclick="selectCarrier(this)">
               <span class="c-icon">🎵</span> TikTok Shop
+            </div>
+            <div class="carrier-opt" data-carrier="Diálogo" onclick="selectCarrier(this)">
+              <span class="c-icon">🚚</span> Diálogo
             </div>
             <div class="carrier-opt" data-carrier="Outro" onclick="selectCarrier(this)">
               <span class="c-icon">🚚</span> Outro
@@ -1072,16 +1076,33 @@ async function fetchPackages(silent) {
   if (!silent) showLoading(true);
   try {
     const snapshot = await packagesCol.orderBy('arrivalDate', 'desc').get();
-    packages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+    const newPackages = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
     _lastFetch = Date.now();
     showLoading(false);
+
+    // Só re-renderiza se os dados mudaram
+    const oldSig = packages.map(p=>p.id+p.status).join(',');
+    const newSig = newPackages.map(p=>p.id+p.status).join(',');
+    const changed = oldSig !== newSig;
+    packages = newPackages;
+
+    if (!silent && !changed) {
+      // Dados iguais em atualização silenciosa - não faz nada
+      var btn = document.getElementById('btnRefresh');
+      if (btn) btn.textContent = '🔄';
+      return;
+    }
+
     updateStats();
-    renderStock();
-    buildMonthFilters();
-    renderHistory();
-    if (document.getElementById('screen-visualizacao') && document.getElementById('screen-visualizacao').classList.contains('active')) renderVis();
+    // Renderiza só a tela ativa
+    var activeScreen = document.querySelector('.screen.active');
+    var sid = activeScreen ? activeScreen.id : '';
+    if (sid === 'screen-stock') renderStock();
+    else if (sid === 'screen-history') { buildMonthFilters(); renderHistory(); }
+    else if (sid === 'screen-visualizacao') renderVis();
+    else if (sid === 'screen-busca') renderGlobalSearch();
+    // Sempre atualiza stats
     if (funcMode) renderFuncMode();
-    // Update refresh button
     var btn = document.getElementById('btnRefresh');
     if (btn) btn.textContent = '🔄';
   } catch(err) {
@@ -1092,13 +1113,11 @@ async function fetchPackages(silent) {
 
 function initRealtimeSync() {
   fetchPackages(false);
-  // Atualiza a cada 30 segundos
-  _syncInterval = setInterval(function() { fetchPackages(true); }, 30000);
-  // Atualiza quando volta para a aba/app
+  // Atualiza quando volta para o app após 2 minutos de ausência
   document.addEventListener('visibilitychange', function() {
     if (!document.hidden) {
       var agora = Date.now();
-      if (agora - _lastFetch > 15000) fetchPackages(true);
+      if (agora - _lastFetch > 120000) fetchPackages(true);
     }
   });
 }
@@ -1158,6 +1177,7 @@ function carrierClass(carrier) {
     'Shopee': 'carrier-shopee',
     'Jadlog': 'carrier-jadlog',
     'TikTok Shop': 'carrier-tiktok',
+    'Diálogo': 'carrier-dialogo',
     'Amazon': 'carrier-amazon',
   };
   return map[carrier] || '';
@@ -1170,6 +1190,7 @@ function carrierEmoji(carrier) {
     'Shopee': '🟠',
     'Jadlog': '🟣',
     'TikTok Shop': '🎵',
+    'Diálogo': '🚚',
     'Amazon': '📦',
     'Outro': '🚚',
   };
