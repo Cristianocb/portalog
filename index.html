@@ -1032,7 +1032,7 @@
 // =====================
 const SUPABASE_URL = 'https://ilvhwgmjapengfzswmmq.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_M99yEHcyZEJNKZAS79OUCw_Qutlxb4e';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+const sbClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // =====================
 // DATA LAYER (Supabase)
@@ -1054,14 +1054,14 @@ async function cleanOldPackages() {
   try {
     var cutoff = new Date();
     cutoff.setDate(cutoff.getDate() - 70);
-    await supabase.from('Encomendas').delete().lt('arrivalDate', cutoff.toISOString());
+    await sbClient.from('Encomendas').delete().lt('arrivalDate', cutoff.toISOString());
   } catch(e) {}
 }
 
 async function fetchPackages(silent) {
   if (!silent) showLoading(true);
   try {
-    const { data, error } = await supabase.from('Encomendas').select('*').order('arrivalDate', { ascending: false });
+    const { data, error } = await sbClient.from('Encomendas').select('*').order('arrivalDate', { ascending: false });
     if (error) throw error;
     const newPackages = (data || []).map(row => ({ id: String(row.id), ...row }));
     _lastFetch = Date.now();
@@ -1123,11 +1123,11 @@ function showLoading(on) {
 
 async function savePackage(pkg) {
   const { id, ...data } = pkg;
-  await supabase.from('Encomendas').upsert({id, ...data});
+  await sbClient.from('Encomendas').upsert({id, ...data});
 }
 
 async function updatePackage(id, fields) {
-  await supabase.from('Encomendas').update(fields).eq('id', id);
+  await sbClient.from('Encomendas').update(fields).eq('id', id);
 }
 
 // =====================
@@ -1511,7 +1511,7 @@ async function confirmBatchDelivery() {
   var ids = Array.from(batchDeliverySelected);
   try {
     for (const id of ids) {
-      await supabase.from('Encomendas').update({
+      await sbClient.from('Encomendas').update({
         status: 'Entregue',
         withdrawnBy: name,
         withdrawalDate: new Date().toISOString()
@@ -1731,7 +1731,7 @@ function saveEdit() {
   var room = document.getElementById('editRoom').value.trim();
   var type = document.getElementById('editType').value;
   if (!name) { showToast('⚠️ Informe o nome', 'error'); return; }
-  supabase.from('Encomendas').update({
+  sbClient.from('Encomendas').update({
     recipient: name,
     room: room,
     recipientType: type
@@ -1743,7 +1743,7 @@ function saveEdit() {
 
 function revertDelivery() {
   if (!confirm('Reverter esta entrega para Em Estoque?')) return;
-  supabase.from('Encomendas').update({
+  sbClient.from('Encomendas').update({
     status: 'Em Estoque',
     withdrawnBy: null,
     withdrawalDate: null,
@@ -1853,7 +1853,7 @@ function confirmDelivery() {
   setTimeout(function() {
     closeModal();
     showToast('✅ Retirada registrada para ' + name);
-    supabase.from('Encomendas').update({
+    sbClient.from('Encomendas').update({
       status: 'Entregue',
       withdrawnBy: name,
       withdrawalDate: new Date().toISOString(),
@@ -1939,11 +1939,11 @@ async function registerPackage() {
   btns.forEach(b => { b.textContent = '⏳ Salvando...'; b.disabled = true; });
   try {
     let photoData = null;
-    if (capturedPhoto) photoData = await compressPhoto(capturedPhoto, 600, 0.6);
+    if (capturedPhoto) photoData = await compressPhoto(capturedPhoto, 400, 0.4);
     const qty = pkgQty || 1;
     const tracking = document.getElementById('trackingCode').value.trim() || '(sem rastreio)';
     for (let i = 0; i < qty; i++) {
-      const { error: addErr } = await supabase.from('Encomendas').insert({
+      const { error: addErr } = await sbClient.from('Encomendas').insert({
         photo: photoData,
         trackingCode: qty > 1 ? (tracking === '(sem rastreio)' ? '(sem rastreio)' : tracking + ' (' + (i+1) + '/' + qty + ')') : tracking,
         carrier: selectedCarrier,
@@ -2028,7 +2028,7 @@ async function sendToCopies() {
   try {
     // batch replaced by supabase loop
     for (const id of selCopies) {
-      await supabase.from('Encomendas').update({status:'No Setor de Cópias',sentToCopiesDate:new Date().toISOString()}).eq('id', id);
+      await sbClient.from('Encomendas').update({status:'No Setor de Cópias',sentToCopiesDate:new Date().toISOString()}).eq('id', id);
     }
     const n=selCopies.size; selCopies.clear(); updateSendBar();
     showToast(`📤 ${n} encomenda${n>1?'s':''} enviada${n>1?'s':''} para Cópias!`);
@@ -2112,7 +2112,7 @@ function confirmCopiesDelivery() {
   const pkgId = currentPackageId;
   closeModal();
   showToast('✅ ' + name + ' retirou a encomenda!');
-  supabase.from('Encomendas').update({
+  sbClient.from('Encomendas').update({
     status: 'Entregue em Cópias',
     deliveredInCopiesBy: name,
     deliveredInCopiesDate: new Date().toISOString()
