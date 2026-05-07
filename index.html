@@ -1073,7 +1073,7 @@ async function fetchPackages(silent) {
     const changed = oldSig !== newSig;
     packages = newPackages;
 
-    if (!silent && !changed) {
+    if (!changed && silent) {
       // Dados iguais em atualização silenciosa - não faz nada
       var btn = document.getElementById('btnRefresh');
       if (btn) btn.textContent = '🔄';
@@ -1988,7 +1988,7 @@ async function registerPackage() {
       document.getElementById('photoInput').value = '';
       updateDateTimeDisplay();
       showToast(qty > 1 ? '✅ ' + qty + ' encomendas registradas!' : '✅ Encomenda registrada com sucesso!');
-      setTimeout(function(){ fetchPackages(true); }, 1000);
+      setTimeout(function(){ fetchPackages(false); }, 800);
     }
   } catch(e) { showToast('❌ Erro: ' + e.message, 'error'); }
   finally { btns.forEach(b => { b.textContent = '✅ Registrar Chegada'; b.disabled = false; }); }
