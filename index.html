@@ -1906,9 +1906,13 @@ function showScreen(name) {
   const nb = document.getElementById('nav-' + name);
   if (nb) nb.classList.add('active');
   if (name !== 'copies-out') { selCopies.clear(); updateSendBar(); }
+  // Fetch fresh data when switching screens
+  fetchPackages(true);
   if (name === 'copies-out') renderCopiesOut();
   else if (name === 'copies-stock') renderCopiesStock();
   else if (name === 'copies-history') renderCopiesHistory();
+  else if (name === 'stock') renderStock();
+  else if (name === 'history') { buildMonthFilters(); renderHistory(); }
   else if (name === 'register') updateDateTimeDisplay();
   updateStats();
 }
