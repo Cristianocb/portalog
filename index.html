@@ -2068,6 +2068,8 @@ async function registerPackage() {
         q.push({ type: 'insert', data: pkgData, pkg: offlinePkg });
         saveOfflineQueue(q);
         packages.unshift(offlinePkg);
+        updateStats();
+        renderStock();
       }
     }
     pkgQty = 1;
