@@ -1184,12 +1184,11 @@ async function fetchPackages(silent) {
 function initRealtimeSync() {
   fetchPackages(false);
 
-  // Polling a cada 5 segundos - leve e eficiente com Supabase
+  // Polling a cada 60 segundos - econômico para plano gratuito
   setInterval(function() {
     fetchPackages(true);
-    // Tenta sincronizar fila offline a cada ciclo
     if (!_isOffline && getOfflineQueue().length > 0) syncOfflineQueue();
-  }, 5000);
+  }, 60000);
 
   // Atualiza quando volta para o app
   document.addEventListener('visibilitychange', function() {
