@@ -1050,6 +1050,63 @@ let activeMonthFilter = null;
 let _syncInterval = null;
 let _lastFetch = 0;
 
+// =====================
+// MODO OFFLINE
+// =====================
+let _isOffline = false;
+const OFFLINE_QUEUE_KEY = 'portalog_offline_queue';
+const OFFLINE_PACKAGES_KEY = 'portalog_offline_packages';
+
+function getOfflineQueue() {
+  try { return JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY) || '[]'); } catch(e) { return []; }
+}
+function saveOfflineQueue(q) {
+  try { localStorage.setItem(OFFLINE_QUEUE_KEY, JSON.stringify(q)); } catch(e) {}
+}
+function getOfflinePackages() {
+  try { return JSON.parse(localStorage.getItem(OFFLINE_PACKAGES_KEY) || '[]'); } catch(e) { return []; }
+}
+function saveOfflinePackages(pkgs) {
+  try { localStorage.setItem(OFFLINE_PACKAGES_KEY, JSON.stringify(pkgs)); } catch(e) {}
+}
+
+function setOfflineMode(offline) {
+  _isOffline = offline;
+  var banner = document.getElementById('offlineBanner');
+  if (!banner) {
+    banner = document.createElement('div');
+    banner.id = 'offlineBanner';
+    banner.style.cssText = 'display:none;position:fixed;top:0;left:0;right:0;z-index:9999;background:#7c2d12;color:#fed7aa;text-align:center;padding:8px 16px;font-size:13px;font-weight:600;border-bottom:2px solid #ea580c';
+    banner.innerHTML = '⚠️ Servidor fora do ar — Modo Offline ativo. Registros salvos localmente e sincronizarão quando voltar.';
+    document.body.insertBefore(banner, document.body.firstChild);
+  }
+  banner.style.display = offline ? 'block' : 'none';
+}
+
+async function syncOfflineQueue() {
+  var queue = getOfflineQueue();
+  if (!queue.length) return;
+  var remaining = [];
+  for (var i = 0; i < queue.length; i++) {
+    var item = queue[i];
+    try {
+      if (item.type === 'insert') {
+        var { error } = await sbClient.from('Encomendas').insert(item.data);
+        if (error) { remaining.push(item); continue; }
+      } else if (item.type === 'update') {
+        var { error } = await sbClient.from('Encomendas').update(item.data).eq('id', Number(item.id));
+        if (error) { remaining.push(item); continue; }
+      }
+    } catch(e) { remaining.push(item); }
+  }
+  saveOfflineQueue(remaining);
+  if (remaining.length < queue.length) {
+    var synced = queue.length - remaining.length;
+    showToast('✅ ' + synced + ' registro(s) sincronizado(s) com o servidor!');
+    fetchPackages(true);
+  }
+}
+
 async function cleanOldPackages() {
   try {
     var cutoff = new Date();
@@ -1063,21 +1120,18 @@ async function fetchPackages(silent) {
   try {
     const { data, error } = await sbClient.from('Encomendas').select('*').order('arrivalDate', { ascending: false });
     if (error) throw error;
-    const newPackages = (data || []).map(row => ({ id: String(row.id), ...row, _numId: row.id }));
+
+    if (_isOffline) { setOfflineMode(false); syncOfflineQueue(); }
+
+    var offlineQueue = getOfflineQueue();
+    var offlinePkgs = offlineQueue.filter(function(q){ return q.type==='insert'; }).map(function(q){ return q.pkg; });
+    const serverPackages = (data || []).map(row => ({ id: String(row.id), ...row, _numId: row.id }));
+    packages = offlinePkgs.concat(serverPackages);
+    saveOfflinePackages(serverPackages);
+
     _lastFetch = Date.now();
     showLoading(false);
-
-    // Só re-renderiza se os dados mudaram
-    const oldSig = packages.map(p=>p.id+p.status).join(',');
-    const newSig = newPackages.map(p=>p.id+p.status).join(',');
-    const changed = oldSig !== newSig;
-    packages = newPackages;
-
-    // Always render after fetch
-    
-
     updateStats();
-    // Renderiza só a tela ativa
     var activeScreen = document.querySelector('.screen.active');
     var sid = activeScreen ? activeScreen.id : '';
     if (sid === 'screen-stock') renderStock();
@@ -1087,13 +1141,25 @@ async function fetchPackages(silent) {
     else if (sid === 'screen-copies-history') renderCopiesHistory();
     else if (sid === 'screen-visualizacao') renderVis();
     else if (sid === 'screen-busca') renderGlobalSearch();
-    // Sempre atualiza stats
     if (funcMode) renderFuncMode();
     var btn = document.getElementById('btnRefresh');
     if (btn) btn.textContent = '🔄';
   } catch(err) {
     showLoading(false);
-    if (!silent) showToast('⚠️ Erro de conexão com o servidor', 'error');
+    setOfflineMode(true);
+    var cached = getOfflinePackages();
+    if (cached.length > 0) {
+      var offlineQueue = getOfflineQueue();
+      var offlinePkgs = offlineQueue.filter(function(q){ return q.type==='insert'; }).map(function(q){ return q.pkg; });
+      packages = offlinePkgs.concat(cached);
+      updateStats();
+      var activeScreen = document.querySelector('.screen.active');
+      var sid = activeScreen ? activeScreen.id : '';
+      if (sid === 'screen-stock') renderStock();
+      else if (sid === 'screen-copies-out') renderCopiesOut();
+      else if (sid === 'screen-copies-stock') renderCopiesStock();
+    }
+    if (!silent) showToast('⚠️ Servidor indisponível — dados locais', 'error');
   }
 }
 
@@ -1101,7 +1167,11 @@ function initRealtimeSync() {
   fetchPackages(false);
 
   // Polling a cada 5 segundos - leve e eficiente com Supabase
-  setInterval(function() { fetchPackages(true); }, 5000);
+  setInterval(function() {
+    fetchPackages(true);
+    // Tenta sincronizar fila offline a cada ciclo
+    if (!_isOffline && getOfflineQueue().length > 0) syncOfflineQueue();
+  }, 5000);
 
   // Atualiza quando volta para o app
   document.addEventListener('visibilitychange', function() {
@@ -1946,8 +2016,9 @@ async function registerPackage() {
     if (capturedPhoto) photoData = await compressPhoto(capturedPhoto, 400, 0.4);
     const qty = pkgQty || 1;
     const tracking = document.getElementById('trackingCode').value.trim() || '(sem rastreio)';
+    let anyOffline = false;
     for (let i = 0; i < qty; i++) {
-      const { error: addErr } = await sbClient.from('Encomendas').insert({
+      const pkgData = {
         photo: photoData,
         trackingCode: qty > 1 ? (tracking === '(sem rastreio)' ? '(sem rastreio)' : tracking + ' (' + (i+1) + '/' + qty + ')') : tracking,
         carrier: selectedCarrier,
@@ -1958,8 +2029,23 @@ async function registerPackage() {
         status: 'Em Estoque',
         withdrawnBy: null, withdrawalDate: null,
         sentToCopiesDate: null, deliveredInCopiesBy: null, deliveredInCopiesDate: null,
-      });
-      if (addErr) throw addErr;
+      };
+      var saved = false;
+      if (!_isOffline) {
+        try {
+          const { error: addErr } = await sbClient.from('Encomendas').insert(pkgData);
+          if (!addErr) { saved = true; } else { setOfflineMode(true); }
+        } catch(netErr) { setOfflineMode(true); }
+      }
+      if (!saved) {
+        anyOffline = true;
+        var tempId = 'offline_' + Date.now() + '_' + i;
+        var offlinePkg = Object.assign({ id: tempId, _offline: true }, pkgData);
+        var q = getOfflineQueue();
+        q.push({ type: 'insert', data: pkgData, pkg: offlinePkg });
+        saveOfflineQueue(q);
+        packages.unshift(offlinePkg);
+      }
     }
     pkgQty = 1;
     document.getElementById('qtyDisplay').textContent = '1';
@@ -1991,7 +2077,7 @@ async function registerPackage() {
       document.getElementById('photoOverlay').style.display = 'none';
       document.getElementById('photoInput').value = '';
       updateDateTimeDisplay();
-      showToast(qty > 1 ? '✅ ' + qty + ' encomendas registradas!' : '✅ Encomenda registrada com sucesso!');
+      showToast(anyOffline ? '📴 Salvo localmente — sincronizará quando o servidor voltar' : (qty > 1 ? '✅ ' + qty + ' encomendas registradas!' : '✅ Encomenda registrada com sucesso!'), anyOffline ? 'error' : 'success');
       setTimeout(function(){ fetchPackages(false); }, 800);
     }
   } catch(e) { showToast('❌ Erro: ' + e.message, 'error'); }
