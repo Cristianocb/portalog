@@ -1083,6 +1083,20 @@ function setOfflineMode(offline) {
   banner.style.display = offline ? 'block' : 'none';
 }
 
+// Testa se o Supabase está acessível com timeout de 4 segundos
+async function checkSupabaseOnline() {
+  try {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 4000);
+    const resp = await fetch(SUPABASE_URL + '/rest/v1/', {
+      signal: controller.signal,
+      headers: { 'apikey': SUPABASE_KEY }
+    });
+    clearTimeout(timeout);
+    return resp.ok || resp.status === 200 || resp.status === 404; // 404 = online mas rota inválida
+  } catch(e) { return false; }
+}
+
 async function syncOfflineQueue() {
   var queue = getOfflineQueue();
   if (!queue.length) return;
@@ -1118,7 +1132,11 @@ async function cleanOldPackages() {
 async function fetchPackages(silent) {
   if (!silent) showLoading(true);
   try {
+    // Timeout de 6 segundos para evitar travar indefinidamente
+    const controller = new AbortController();
+    const fetchTimeout = setTimeout(() => controller.abort(), 6000);
     const { data, error } = await sbClient.from('Encomendas').select('*').order('arrivalDate', { ascending: false });
+    clearTimeout(fetchTimeout);
     if (error) throw error;
 
     if (_isOffline) { setOfflineMode(false); syncOfflineQueue(); }
@@ -2032,10 +2050,15 @@ async function registerPackage() {
       };
       var saved = false;
       if (!_isOffline) {
-        try {
-          const { error: addErr } = await sbClient.from('Encomendas').insert(pkgData);
-          if (!addErr) { saved = true; } else { setOfflineMode(true); }
-        } catch(netErr) { setOfflineMode(true); }
+        // Verifica conectividade antes de tentar (evita travar no CORS)
+        var online = await checkSupabaseOnline();
+        if (!online) { setOfflineMode(true); }
+        else {
+          try {
+            const { error: addErr } = await sbClient.from('Encomendas').insert(pkgData);
+            if (!addErr) { saved = true; } else { setOfflineMode(true); }
+          } catch(netErr) { setOfflineMode(true); }
+        }
       }
       if (!saved) {
         anyOffline = true;
