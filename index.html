@@ -1648,7 +1648,7 @@ function renderHistory() {
 
 function pkgCardHTML(pkg, isHistory) {
   const thumb = pkg.photo
-    ? `<div class="pkg-thumb"><img src="${pkg.photo}" alt="foto"></div>`
+    ? `<div class="pkg-thumb"><img loading="lazy" src="${pkg.photo}" alt="foto"></div>`
     : `<div class="pkg-thumb">📦</div>`;
 
   const carrierBadge = `<span class="badge badge-carrier ${carrierClass(pkg.carrier)}">${carrierEmoji(pkg.carrier)} ${pkg.carrier}</span>`;
@@ -1693,7 +1693,7 @@ function openDetail(id) {
   // Photo
   const photoEl = document.getElementById('modalPhoto');
   if (pkg.photo) {
-    photoEl.innerHTML = `<img src="${pkg.photo}" alt="foto da encomenda">`;
+    photoEl.innerHTML = `<img loading="lazy" src="${pkg.photo}" alt="foto da encomenda">`;
   } else {
     photoEl.innerHTML = '📦';
   }
@@ -2033,7 +2033,7 @@ function renderCopiesOut() {
     const sel = selCopies.has(String(p.id));
     return `<div class="pkg-card" onclick="toggleSelCopy('${p.id}')" style="position:relative;border-color:${sel?'#c07aff':'var(--border)'};background:${sel?'rgba(192,122,255,.06)':'var(--surface)'}">
       <div style="position:absolute;top:10px;right:10px;width:22px;height:22px;border-radius:50%;border:2px solid ${sel?'#c07aff':'var(--border)'};background:${sel?'#c07aff':'var(--surface2)'};display:flex;align-items:center;justify-content:center;font-size:11px;color:#fff">${sel?'✓':''}</div>
-      ${p.photo?`<div class="pkg-thumb"><img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:6px"></div>`:'<div class="pkg-thumb">📦</div>'}
+      <div class="pkg-thumb" style="display:flex;align-items:center;justify-content:center;font-size:22px">📦</div>
       <div class="pkg-info"><div class="pkg-name">${p.recipient}</div><div class="pkg-meta"><span>${p.room||'—'}</span></div><div class="pkg-track">${p.trackingCode}</div></div>
     </div>`;
   }).join('');
@@ -2051,20 +2051,35 @@ function updateSendBar() {
 }
 
 async function sendToCopies() {
-  if(!selCopies.size)return;
+  if(!selCopies.size){ showToast('⚠️ Selecione ao menos uma encomenda','error'); return; }
+  var ids = Array.from(selCopies);
+  var btn = document.querySelector('[onclick="sendToCopies()"]');
+  if(btn){ btn.textContent='⏳ Enviando...'; btn.disabled=true; }
   try {
-    // batch replaced by supabase loop
-    for (const id of selCopies) {
-      await db.collection(COLLECTION).doc(String(id)).update({status:'No Setor de Cópias',sentToCopiesDate:new Date().toISOString()});
+    for (var i=0; i<ids.length; i++) {
+      var id = String(ids[i]);
+      await db.collection(COLLECTION).doc(id).update({
+        status: 'No Setor de Cópias',
+        sentToCopiesDate: new Date().toISOString()
+      });
     }
-    const n=selCopies.size;
+    var n = ids.length;
     // Remove da lista local imediatamente
-    selCopies.forEach(function(id){ packages = packages.filter(function(p){ return String(p.id) !== String(id); }); });
-    selCopies.clear(); updateSendBar();
-    updateStats(); renderCopiesOut();
-    showToast(`📤 ${n} encomenda${n>1?'s':''} enviada${n>1?'s':''} para Cópias!`);
+    ids.forEach(function(id){ 
+      packages = packages.filter(function(p){ return String(p.id) !== String(id); }); 
+    });
+    selCopies.clear(); 
+    updateSendBar();
+    updateStats(); 
+    renderCopiesOut();
+    showToast('📤 ' + n + ' encomenda' + (n>1?'s':'') + ' enviada' + (n>1?'s':'') + ' para Cópias!');
     fetchPackages(true);
-  } catch(e){showToast('❌ Erro: '+e.message,'error');}
+  } catch(e){
+    showToast('❌ Erro ao enviar: ' + e.message, 'error');
+    console.error('sendToCopies error:', e);
+  } finally {
+    if(btn){ btn.textContent='📤 Enviar'; btn.disabled=false; }
+  }
 }
 
 function cleanTracking(t) {
@@ -2082,7 +2097,7 @@ function renderCopiesStock() {
   const el=document.getElementById('copiesStockList');
   if(!list.length){el.innerHTML='<p style="text-align:center;color:var(--text3);padding:30px">Nenhuma encomenda aqui ainda</p>';return;}
   el.innerHTML=list.map(p=>`<div class="pkg-card" onclick="openCopiesDetail('${p.id}')">
-    ${p.photo?`<div class="pkg-thumb"><img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:6px"></div>`:'<div class="pkg-thumb">📦</div>'}
+    <div class="pkg-thumb" style="display:flex;align-items:center;justify-content:center;font-size:22px">📦</div>
     <div class="pkg-info"><div class="pkg-name">${p.recipient}</div><div class="pkg-meta"><span>${p.room||'—'}</span></div><div class="pkg-track">${cleanTracking(p.trackingCode)}</div></div>
   </div>`).join('');
 }
@@ -2093,7 +2108,7 @@ function renderCopiesHistory() {
   const el=document.getElementById('copiesHistList');
   if(!list.length){el.innerHTML='<p style="text-align:center;color:var(--text3);padding:30px">Nenhuma entrega registrada</p>';return;}
   el.innerHTML=list.map(p=>`<div class="pkg-card" onclick="openCopiesDetail('${p.id}')">
-    ${p.photo?`<div class="pkg-thumb"><img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:6px"></div>`:'<div class="pkg-thumb">📦</div>'}
+    <div class="pkg-thumb" style="display:flex;align-items:center;justify-content:center;font-size:22px">📦</div>
     <div class="pkg-info"><div class="pkg-name">${p.recipient}</div><div class="pkg-meta">Retirado por: <b>${p.deliveredInCopiesBy||'—'}</b></div></div>
   </div>`).join('');
 }
@@ -2376,7 +2391,7 @@ function renderVis() {
   const el = document.getElementById('visList');
   if (!list.length) { el.innerHTML = '<p style="text-align:center;color:var(--text3);padding:30px">Nenhuma encomenda no momento</p>'; return; }
   el.innerHTML = list.map(p => `<div class="pkg-card" onclick="openVisDetail('${p.id}')" style="cursor:pointer">
-    ${p.photo ? `<div class="pkg-thumb"><img src="${p.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:6px"></div>` : '<div class="pkg-thumb">📦</div>'}
+    <div class="pkg-thumb" style="display:flex;align-items:center;justify-content:center;font-size:22px">📦</div>
     <div class="pkg-info">
       <div class="pkg-name">${p.recipient}</div>
       <div class="pkg-meta"><span>${p.room||'—'}</span> · <span>${p.carrier||''}</span></div>
