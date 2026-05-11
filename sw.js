@@ -1,4 +1,4 @@
-const CACHE = 'portalog-v5';
+const CACHE = 'portalog-v6';
 const ASSETS = [
   '/',
   '/index.html',
