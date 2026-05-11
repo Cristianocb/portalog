@@ -597,12 +597,8 @@
     </div>
   </div>
 
-  <!-- MODE BAR -->
+  <!-- REFRESH BTN -->
   <button id="btnRefresh" onclick="forceRefresh()" style="position:fixed;bottom:80px;right:16px;width:48px;height:48px;border-radius:50%;background:var(--accent);border:none;color:#fff;font-size:22px;cursor:pointer;z-index:100;box-shadow:0 4px 16px rgba(0,0,0,.4)">🔄</button>
-  <div id="modeBar" style="display:flex;margin:10px 16px 0;background:var(--surface2);border-radius:14px;border:1px solid var(--border);padding:4px;gap:4px">
-    <button id="modePortaria" onclick="setMode('portaria')" style="flex:1;padding:9px 8px;border-radius:8px;border:none;background:var(--surface3);color:var(--accent);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer">🏢 Portaria</button>
-    <button id="modeCopias" onclick="setMode('copias')" style="flex:1;padding:9px 8px;border-radius:8px;border:none;background:transparent;color:var(--text2);font-family:'DM Sans',sans-serif;font-size:12px;font-weight:600;cursor:pointer">📋 Setor de Cópias</button>
-  </div>
 
   <!-- NAV PORTARIA -->
   <nav class="nav" id="navPortaria">
@@ -632,17 +628,7 @@
     </button>
   </nav>
 
-  <!-- NAV COPIAS -->
-  <nav class="nav" id="navCopias" style="display:none">
-    <button class="nav-btn active" onclick="showScreen('copies-stock')" id="nav-copies-stock">
-      <span class="nav-icon">📬</span>
-      <span>Aguardando</span>
-    </button>
-    <button class="nav-btn" onclick="showScreen('copies-history')" id="nav-copies-history">
-      <span class="nav-icon">✅</span>
-      <span>Entregues</span>
-    </button>
-  </nav>
+
 
   <div class="content">
 
@@ -884,21 +870,6 @@
       <div class="pkg-list" id="copiesOutList"></div>
     </div>
 
-    <!-- COPIES STOCK -->
-    <div class="screen" id="screen-copies-stock">
-      <div class="section-title" style="color:#c07aff">Setor de Cópias</div>
-      <div class="section-sub" id="copiesSub">Encomendas aguardando retirada pelos alunos</div>
-      <div class="stats-row">
-        <div class="stat-card accent"><div class="stat-num" id="statCopiesWaiting">0</div><div class="stat-label">Aguardando retirada</div></div>
-        <div class="stat-card"><div class="stat-num" id="statCopiesToday" style="color:var(--accent4)">0</div><div class="stat-label">Chegaram hoje</div></div>
-      </div>
-      <div class="search-row">
-        <div class="search-wrap" style="flex:1"><span class="search-icon">🔍</span><input type="text" id="copiesSearch" placeholder="Buscar aluno..." oninput="renderCopiesStock()"></div>
-      </div>
-      <button onclick="shareWhatsAppCopias()" style="width:100%;padding:12px;border-radius:14px;border:none;background:linear-gradient(135deg,#25d366,#1aaa52);color:#fff;font-family:'Syne',sans-serif;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:12px;box-shadow:0 4px 16px rgba(37,211,102,.25)">📲 Compartilhar Lista com Residenciais</button>
-      <div class="pkg-list" id="copiesStockList"></div>
-    </div>
-
     <!-- LOGS DE LEITURA -->
     <div class="screen" id="screen-logs">
       <div class="section-title" style="color:var(--accent4)">📊 Monitor de Leituras</div>
@@ -920,15 +891,7 @@
       <div class="pkg-list" id="visList"></div>
     </div>
 
-    <!-- COPIES HISTORY -->
-    <div class="screen" id="screen-copies-history">
-      <div class="section-title">Histórico — Cópias</div>
-      <div class="section-sub">Encomendas retiradas pelos alunos</div>
-      <div class="search-row">
-        <div class="search-wrap" style="flex:1"><span class="search-icon">🔍</span><input type="text" id="copiesHistSearch" placeholder="Buscar aluno..." oninput="renderCopiesHistory()"></div>
-      </div>
-      <div class="pkg-list" id="copiesHistList"></div>
-    </div>
+
 
   </div>
 </div>
@@ -1146,8 +1109,6 @@ async function fetchPackages(silent, fullSearch) {
     if (sid === 'screen-stock') renderStock();
     else if (sid === 'screen-history') { buildMonthFilters(); renderHistory(); }
     else if (sid === 'screen-copies-out') renderCopiesOut();
-    else if (sid === 'screen-copies-stock') renderCopiesStock();
-    else if (sid === 'screen-copies-history') renderCopiesHistory();
     else if (sid === 'screen-visualizacao') renderVis();
     else if (sid === 'screen-logs') renderLogs();
     else if (sid === 'screen-busca') renderGlobalSearch();
@@ -1581,6 +1542,7 @@ async function confirmBatchDelivery() {
         withdrawnBy: name,
         withdrawalDate: new Date().toISOString()
       });
+      packages = packages.filter(function(p){ return String(p.id) !== String(id); });
     }
     showToast('✅ ' + ids.length + ' encomenda(s) entregue(s) para ' + name + '!');
     toggleBatchDelivery();
@@ -1922,7 +1884,12 @@ function confirmDelivery() {
       status: 'Entregue',
       withdrawnBy: name,
       withdrawalDate: new Date().toISOString(),
-    }).then(function() { fetchPackages(true); })
+    }).then(function() {
+      // Remove da lista local imediatamente sem esperar o fetch
+      packages = packages.filter(function(p){ return String(p.id) !== String(pkgId); });
+      updateStats(); renderStock();
+      fetchPackages(true);
+    })
     .catch(function(e) { showToast('❌ Erro ao salvar. Verifique a conexão.', 'error'); });
   }, 300);
 }
@@ -1951,17 +1918,6 @@ function selRtype(el) {
 let appMode = 'portaria';
 let selCopies = new Set();
 
-function setMode(m) {
-  appMode = m;
-  document.getElementById('modePortaria').style.background = m==='portaria' ? 'var(--surface3)' : 'transparent';
-  document.getElementById('modePortaria').style.color = m==='portaria' ? 'var(--accent)' : 'var(--text2)';
-  document.getElementById('modeCopias').style.background = m==='copias' ? 'var(--surface3)' : 'transparent';
-  document.getElementById('modeCopias').style.color = m==='copias' ? '#c07aff' : 'var(--text2)';
-  document.getElementById('navPortaria').style.display = m==='portaria' ? 'flex' : 'none';
-  document.getElementById('navCopias').style.display = m==='copias' ? 'flex' : 'none';
-  if (m==='portaria') showScreen('register');
-  else showScreen('copies-stock');
-}
 
 const _origShowScreen = showScreen;
 function showScreen(name) {
@@ -1975,8 +1931,6 @@ function showScreen(name) {
   // Fetch fresh data when switching screens
   fetchPackages(true);
   if (name === 'copies-out') renderCopiesOut();
-  else if (name === 'copies-stock') renderCopiesStock();
-  else if (name === 'copies-history') renderCopiesHistory();
   else if (name === 'stock') renderStock();
   else if (name === 'history') { buildMonthFilters(); renderHistory(); }
   else if (name === 'register') updateDateTimeDisplay();
@@ -2103,8 +2057,13 @@ async function sendToCopies() {
     for (const id of selCopies) {
       await db.collection(COLLECTION).doc(String(id)).update({status:'No Setor de Cópias',sentToCopiesDate:new Date().toISOString()});
     }
-    const n=selCopies.size; selCopies.clear(); updateSendBar();
+    const n=selCopies.size;
+    // Remove da lista local imediatamente
+    selCopies.forEach(function(id){ packages = packages.filter(function(p){ return String(p.id) !== String(id); }); });
+    selCopies.clear(); updateSendBar();
+    updateStats(); renderCopiesOut();
     showToast(`📤 ${n} encomenda${n>1?'s':''} enviada${n>1?'s':''} para Cópias!`);
+    fetchPackages(true);
   } catch(e){showToast('❌ Erro: '+e.message,'error');}
 }
 
