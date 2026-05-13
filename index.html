@@ -2525,8 +2525,7 @@ function importarCSV(input) {
   reader.onload = function(e) {
     var text = e.target.result;
     if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
-    var lines = text.split('
-').filter(function(l){ return l.trim(); });
+    var lines = text.split('\n').filter(function(l){ return l.trim(); });
     if (lines.length < 2) { showToast('❌ Arquivo inválido','error'); return; }
     var headers = lines[0].split(',').map(function(h){ return h.replace(/"/g,'').trim(); });
     var dados = [];
