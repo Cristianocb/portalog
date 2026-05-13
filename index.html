@@ -434,6 +434,7 @@
   .carrier-amazon { background: rgba(255,153,0,0.1); color: #ff9900; border-color: rgba(255,153,0,0.2); }
   .carrier-tiktok { background: rgba(0,0,0,0.2); color: #ff0050; border-color: rgba(255,0,80,0.3); }
   .carrier-shein { background: rgba(0,180,100,0.12); color: #00b464; border-color: rgba(0,180,100,0.2); }
+  .carrier-shein { background: rgba(0,180,100,0.12); color: #00b464; border-color: rgba(0,180,100,0.2); }
   .carrier-dialogo { background: rgba(0,120,255,0.1); color: #4f8cff; border-color: rgba(0,120,255,0.2); }
 
   /* EMPTY STATE */
@@ -878,28 +879,22 @@
     <div class="screen" id="screen-arquivo">
       <div class="section-title" style="color:var(--accent4)">🗄️ Histórico Arquivado</div>
       <div class="section-sub">Encomendas antigas — pesquisa local, sem internet</div>
-
       <div style="background:var(--surface);border-radius:12px;padding:14px;margin-bottom:12px;border:1px solid var(--border)">
         <div style="font-size:13px;color:var(--text2);margin-bottom:10px">📥 Importar arquivo CSV de backup:</div>
         <input type="file" id="csvInput" accept=".csv" onchange="importarCSV(this)" style="display:none">
-        <button onclick="document.getElementById('csvInput').click()" style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-size:13px;font-weight:700;cursor:pointer">
-          📂 Selecionar arquivo CSV
-        </button>
+        <button onclick="document.getElementById('csvInput').click()" style="width:100%;padding:12px;border-radius:10px;border:1px solid var(--accent);background:transparent;color:var(--accent);font-size:13px;font-weight:700;cursor:pointer">📂 Selecionar arquivo CSV</button>
         <div id="arquivoStatus" style="font-size:12px;color:var(--text2);margin-top:8px;text-align:center"></div>
       </div>
-
       <div class="search-row" style="margin-bottom:8px">
         <div class="search-wrap" style="flex:1">
           <span class="search-icon">🔍</span>
-          <input type="text" id="arquivoSearch" placeholder="Nome, rastreio, data..." oninput="buscarArquivo()">
+          <input type="text" id="arquivoSearch" placeholder="Nome, rastreio, data..." oninput="debounceArquivo()">
         </div>
       </div>
-
       <div style="display:flex;gap:8px;margin-bottom:12px">
-        <input type="date" id="arquivoDateFrom" onchange="buscarArquivo()" style="flex:1;padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px">
-        <input type="date" id="arquivoDateTo" onchange="buscarArquivo()" style="flex:1;padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px">
+        <input type="date" id="arquivoDateFrom" onchange="renderArquivo()" style="flex:1;padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px">
+        <input type="date" id="arquivoDateTo" onchange="renderArquivo()" style="flex:1;padding:8px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface2);color:var(--text);font-size:13px">
       </div>
-
       <div id="arquivoResultados"></div>
     </div>
 
@@ -1144,7 +1139,6 @@ async function fetchPackages(silent, fullSearch) {
     else if (sid === 'screen-copies-out') renderCopiesOut();
     else if (sid === 'screen-visualizacao') renderVis();
     else if (sid === 'screen-logs') renderLogs();
-    else if (sid === 'screen-arquivo') renderArquivo();
     else if (sid === 'screen-busca') renderGlobalSearch();
     if (funcMode) renderFuncMode();
     var btn = document.getElementById('btnRefresh');
@@ -1164,12 +1158,7 @@ function debounceSearch() {
 
 function initRealtimeSync() {
   fetchPackages(false);
-  // Sincroniza quando volta ao app após ficar em background
-  document.addEventListener('visibilitychange', function() {
-    if (!document.hidden && Date.now() - _lastFetch > 60000) {
-      fetchPackages(true);
-    }
-  });
+  // Sem polling — cada ação atualiza na hora via fetchPackages(true)
 }
 
 // Força atualização manual
@@ -1228,6 +1217,7 @@ function carrierClass(carrier) {
     'Jadlog': 'carrier-jadlog',
     'TikTok Shop': 'carrier-tiktok',
     'Shein': 'carrier-shein',
+    'Shein': 'carrier-shein',
     'Diálogo': 'carrier-dialogo',
     'Amazon': 'carrier-amazon',
   };
@@ -1241,6 +1231,7 @@ function carrierEmoji(carrier) {
     'Shopee': '🟠',
     'Jadlog': '🟣',
     'TikTok Shop': '🎵',
+    'Shein': '🛍️',
     'Shein': '🛍️',
     'Diálogo': '🚚',
     'Amazon': '📦',
@@ -1262,10 +1253,8 @@ function showToast(msg, type = 'success') {
 function showScreen(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  var sc = document.getElementById('screen-' + name);
-  if (sc) sc.classList.add('active');
-  var nb = document.getElementById('nav-' + name);
-  if (nb) nb.classList.add('active');
+  document.getElementById('screen-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
 
   if (name === 'stock') renderStock();
   else if (name === 'history') { buildMonthFilters(); renderHistory(); }
@@ -1274,7 +1263,6 @@ function showScreen(name) {
   else if (name === 'busca') renderGlobalSearch();
   else if (name === 'logs') renderLogs();
   else if (name === 'arquivo') renderArquivo();
-  if (name !== 'copies-out') { selCopies.clear(); updateSendBar(); }
   updateStats();
 }
 
@@ -1295,6 +1283,19 @@ updateDateTimeDisplay();
 // =====================
 // PHOTO
 // =====================
+function resetPhotoInput() {
+  var old = document.getElementById('photoInput');
+  if (!old) return;
+  var newInput = document.createElement('input');
+  newInput.type = 'file';
+  newInput.id = 'photoInput';
+  newInput.accept = 'image/*';
+  newInput.setAttribute('capture', 'environment');
+  newInput.style.display = 'none';
+  newInput.onchange = function() { handlePhoto(this); };
+  old.parentNode.replaceChild(newInput, old);
+}
+
 function handlePhoto(input) {
   const file = input.files[0];
   if (!file) return;
@@ -1307,6 +1308,7 @@ function handlePhoto(input) {
     area.classList.add('has-photo');
     placeholder.style.display = 'none';
     overlay.style.display = 'block';
+    // Remove old img
     const old = area.querySelector('img');
     if (old) old.remove();
     const img = document.createElement('img');
@@ -1314,19 +1316,6 @@ function handlePhoto(input) {
     area.insertBefore(img, overlay);
   };
   reader.readAsDataURL(file);
-}
-
-function resetPhotoInput() {
-  // Recria o input para garantir que a câmera abre na próxima vez
-  var old = document.getElementById('photoInput');
-  if (!old) return;
-  var newInput = document.createElement('input');
-  newInput.type = 'file';
-  newInput.id = 'photoInput';
-  newInput.accept = 'image/*';
-  newInput.setAttribute('capture', 'environment');
-  newInput.onchange = function() { handlePhoto(this); };
-  old.parentNode.replaceChild(newInput, old);
 }
 
 // =====================
@@ -1604,7 +1593,7 @@ async function confirmBatchDelivery() {
     }
     showToast('✅ ' + ids.length + ' encomenda(s) entregue(s) para ' + name + '!');
     toggleBatchDelivery();
-    updateStats(); renderStock();
+    fetchPackages(true);
   } catch(e) {
     showToast('❌ Erro ao salvar. Tente novamente.', 'error');
   }
@@ -1821,7 +1810,7 @@ function saveEdit() {
     room: room,
     recipientType: type
   }).then(function() {
-    showToast('✅ Dados atualizados!'); closeModal();
+    showToast('✅ Dados atualizados!'); closeModal(); fetchPackages(true);
   }).catch(function(e) { showToast('❌ Erro ao salvar', 'error'); });
 }
 
@@ -1834,7 +1823,7 @@ function revertDelivery() {
     deliveredInCopiesBy: null,
     deliveredInCopiesDate: null
   }).then(function() {
-    showToast('↩️ Entrega revertida!'); closeModal(); fetchPackages(true, false);
+    showToast('↩️ Entrega revertida!'); closeModal(); fetchPackages(true);
   }).catch(function(e) { showToast('❌ Erro ao reverter', 'error'); });
 }
 
@@ -1946,6 +1935,7 @@ function confirmDelivery() {
       // Remove da lista local imediatamente sem esperar o fetch
       packages = packages.filter(function(p){ return String(p.id) !== String(pkgId); });
       updateStats(); renderStock();
+      fetchPackages(true);
     })
     .catch(function(e) { showToast('❌ Erro ao salvar. Verifique a conexão.', 'error'); });
   }, 300);
@@ -1977,7 +1967,7 @@ let selCopies = new Set();
 
 
 const _origShowScreen = showScreen;
-// showScreen já definida acima — removida duplicata
+
 
 // =====================
 // QUANTITY
@@ -2002,7 +1992,7 @@ async function registerPackage() {
   btns.forEach(b => { b.textContent = '⏳ Salvando...'; b.disabled = true; });
   try {
     let photoData = null;
-    if (capturedPhoto) photoData = await compressPhoto(capturedPhoto, 300, 0.3);
+    if (capturedPhoto) photoData = await compressPhoto(capturedPhoto, 400, 0.4);
     const qty = pkgQty || 1;
     const tracking = document.getElementById('trackingCode').value.trim() || '(sem rastreio)';
     for (let i = 0; i < qty; i++) {
@@ -2038,7 +2028,7 @@ async function registerPackage() {
       area.classList.remove('has-photo');
       document.getElementById('photoPlaceholder').style.display = 'flex';
       document.getElementById('photoOverlay').style.display = 'none';
-      document.getElementById('photoInput').value = '';
+      resetPhotoInput();
       showToast('✅ Salvo! Próxima encomenda — troque foto e rastreio');
     } else {
       // Normal mode: clear everything
@@ -2054,7 +2044,7 @@ async function registerPackage() {
       area.classList.remove('has-photo');
       document.getElementById('photoPlaceholder').style.display = 'flex';
       document.getElementById('photoOverlay').style.display = 'none';
-      document.getElementById('photoInput').value = '';
+      resetPhotoInput();
       updateDateTimeDisplay();
       showToast(qty > 1 ? '✅ ' + qty + ' encomendas registradas!' : '✅ Encomenda registrada com sucesso!');
       setTimeout(function(){ fetchPackages(false); }, 800);
@@ -2115,6 +2105,7 @@ async function sendToCopies() {
     updateStats(); 
     renderCopiesOut();
     showToast('📤 ' + n + ' encomenda' + (n>1?'s':'') + ' enviada' + (n>1?'s':'') + ' para Cópias!');
+    fetchPackages(true);
   } catch(e){
     showToast('❌ Erro ao enviar: ' + e.message, 'error');
     console.error('sendToCopies error:', e);
@@ -2208,145 +2199,6 @@ function confirmCopiesDelivery() {
     showToast('❌ Erro ao salvar: ' + e.message, 'error');
   });
 }
-
-// =====================
-// HISTÓRICO ARQUIVADO
-// =====================
-const ARQUIVO_KEY = 'portalog_arquivo';
-
-function getArquivo() {
-  try { return JSON.parse(localStorage.getItem(ARQUIVO_KEY) || '[]'); } catch(e) { return []; }
-}
-function salvarArquivo(dados) {
-  try { localStorage.setItem(ARQUIVO_KEY, JSON.stringify(dados)); } catch(e) {
-    showToast('❌ Arquivo muito grande para o navegador', 'error');
-  }
-}
-
-function importarCSV(input) {
-  var file = input.files[0];
-  if (!file) return;
-  var reader = new FileReader();
-  reader.onload = function(e) {
-    var text = e.target.result;
-    // Remove BOM se houver
-    if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
-    var lines = text.split('
-').filter(function(l){ return l.trim(); });
-    if (lines.length < 2) { showToast('❌ Arquivo vazio ou inválido', 'error'); return; }
-    
-    var headers = lines[0].split(',').map(function(h){ return h.replace(/"/g,'').trim(); });
-    var dados = [];
-    for (var i = 1; i < lines.length; i++) {
-      var vals = lines[i].match(/(".*?"|[^,]+)(?=\s*,|\s*$)/g) || [];
-      var obj = {};
-      headers.forEach(function(h, idx) {
-        obj[h] = (vals[idx] || '').replace(/^"|"$/g,'').replace(/""/g,'"').trim();
-      });
-      if (obj['Destinatário'] || obj['destinatario']) dados.push(obj);
-    }
-
-    // Mescla com arquivo existente sem duplicar
-    var existente = getArquivo();
-    var idsExistentes = new Set(existente.map(function(d){ return d['ID'] || d['id']; }));
-    var novos = dados.filter(function(d){ return !idsExistentes.has(d['ID'] || d['id']); });
-    var total = existente.concat(novos);
-    salvarArquivo(total);
-
-    document.getElementById('arquivoStatus').textContent = '✅ ' + total.length + ' encomendas no arquivo (' + novos.length + ' novas importadas)';
-    document.getElementById('arquivoStatus').style.color = 'var(--accent2)';
-    showToast('✅ ' + novos.length + ' encomendas importadas!');
-    buscarArquivo();
-  };
-  reader.readAsText(file, 'UTF-8');
-}
-
-var _arquivoDebounce = null;
-function buscarArquivo() {
-  clearTimeout(_arquivoDebounce);
-  _arquivoDebounce = setTimeout(function() { _renderArquivo(); }, 400);
-}
-
-function _renderArquivo() {
-  var el = document.getElementById('arquivoResultados');
-  var dados = getArquivo();
-  var search = (document.getElementById('arquivoSearch').value || '').toLowerCase().trim();
-  var dateFrom = document.getElementById('arquivoDateFrom').value;
-  var dateTo = document.getElementById('arquivoDateTo').value;
-
-  // Atualizar status
-  var statusEl = document.getElementById('arquivoStatus');
-  if (dados.length > 0) {
-    statusEl.textContent = '📦 ' + dados.length + ' encomendas no arquivo local';
-    statusEl.style.color = 'var(--text2)';
-  } else {
-    statusEl.textContent = 'Nenhum arquivo importado ainda';
-  }
-
-  if (!search && !dateFrom && !dateTo) {
-    el.innerHTML = '<div class="empty"><div class="empty-icon">🗄️</div><h3>Histórico arquivado</h3><p>Importe um CSV de backup ou pesquise por nome, rastreio ou data</p></div>';
-    return;
-  }
-
-  var filtrados = dados.filter(function(d) {
-    var nome = (d['Destinatário'] || d['destinatario'] || '').toLowerCase();
-    var rastreio = (d['Rastreio'] || d['rastreio'] || '').toLowerCase();
-    var transp = (d['Transportadora'] || d['transportadora'] || '').toLowerCase();
-    var sala = (d['Sala'] || d['sala'] || '').toLowerCase();
-    var chegada = d['Chegada'] || d['chegada'] || '';
-
-    var matchSearch = !search || nome.includes(search) || rastreio.includes(search) || transp.includes(search) || sala.includes(search);
-    var matchFrom = !dateFrom || chegada >= dateFrom;
-    var matchTo = !dateTo || chegada <= dateTo + 'T23:59:59';
-
-    return matchSearch && matchFrom && matchTo;
-  });
-
-  if (!filtrados.length) {
-    el.innerHTML = '<div class="empty"><div class="empty-icon">🔍</div><h3>Nenhum resultado</h3><p>Tente outros termos ou datas</p></div>';
-    return;
-  }
-
-  var html = '<div style="font-size:12px;color:var(--text2);margin-bottom:10px">' + filtrados.length + ' resultado(s) encontrado(s)</div>';
-  filtrados.slice(0, 50).forEach(function(d) {
-    var nome = d['Destinatário'] || d['destinatario'] || '—';
-    var sala = d['Sala'] || d['sala'] || '—';
-    var transp = d['Transportadora'] || d['transportadora'] || '—';
-    var rastreio = d['Rastreio'] || d['rastreio'] || '—';
-    var status = d['Status'] || d['status'] || '—';
-    var chegada = d['Chegada'] || d['chegada'] || '';
-    var entregue = d['Entregue'] || d['entregue'] || '';
-    var retiradoPor = d['Retirado Por'] || d['retiradoPor'] || '';
-
-    var dataChegada = chegada ? new Date(chegada).toLocaleDateString('pt-BR') : '—';
-    var dataEntrega = entregue ? new Date(entregue).toLocaleDateString('pt-BR') : '—';
-    var corStatus = status === 'Entregue' ? 'var(--accent2)' : status === 'Em Estoque' ? 'var(--accent)' : 'var(--accent4)';
-
-    html += '<div style="background:var(--surface);border-radius:12px;padding:14px;margin-bottom:8px;border:1px solid var(--border)">';
-    html += '<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px">';
-    html += '<div style="font-weight:700;color:var(--text)">' + nome + '</div>';
-    html += '<span style="font-size:11px;padding:3px 8px;border-radius:20px;background:var(--surface3);color:' + corStatus + '">' + status + '</span>';
-    html += '</div>';
-    html += '<div style="font-size:12px;color:var(--text2);display:flex;flex-wrap:wrap;gap:8px">';
-    html += '<span>🏠 ' + sala + '</span>';
-    html += '<span>📦 ' + transp + '</span>';
-    html += '<span>📅 Chegou: ' + dataChegada + '</span>';
-    if (entregue) html += '<span>✅ Entregue: ' + dataEntrega + '</span>';
-    if (retiradoPor) html += '<span>👤 ' + retiradoPor + '</span>';
-    html += '</div>';
-    if (rastreio && rastreio !== '(sem rastreio)') {
-      html += '<div style="font-size:11px;color:var(--text3);margin-top:6px;font-family:monospace">' + rastreio + '</div>';
-    }
-    html += '</div>';
-  });
-
-  if (filtrados.length > 50) {
-    html += '<div style="text-align:center;font-size:12px;color:var(--text2);padding:12px">Mostrando 50 de ' + filtrados.length + ' resultados. Refine a busca.</div>';
-  }
-
-  el.innerHTML = html;
-}
-
 
 // =====================
 // MONITOR DE LEITURAS
@@ -2622,7 +2474,6 @@ function openVisDetail(id) {
 }
 
 // =====================
-// =====================
 // MONITOR DE LEITURAS
 // =====================
 
@@ -2658,6 +2509,104 @@ function shareWhatsAppCopias() {
   msg += '\n_Retirar no Setor de Cópias — Portaria IAESC_';
 
   window.open('https://api.whatsapp.com/send?text=' + encodeURIComponent(msg), '_blank');
+}
+
+// =====================
+// HISTÓRICO ARQUIVADO
+// =====================
+const ARQUIVO_KEY = 'portalog_arquivo';
+function getArquivo() { try { return JSON.parse(localStorage.getItem(ARQUIVO_KEY) || '[]'); } catch(e) { return []; } }
+function salvarArquivo(d) { try { localStorage.setItem(ARQUIVO_KEY, JSON.stringify(d)); } catch(e) { showToast('❌ Arquivo muito grande','error'); } }
+
+function importarCSV(input) {
+  var file = input.files[0];
+  if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(e) {
+    var text = e.target.result;
+    if (text.charCodeAt(0) === 0xFEFF) text = text.slice(1);
+    var lines = text.split('
+').filter(function(l){ return l.trim(); });
+    if (lines.length < 2) { showToast('❌ Arquivo inválido','error'); return; }
+    var headers = lines[0].split(',').map(function(h){ return h.replace(/"/g,'').trim(); });
+    var dados = [];
+    for (var i = 1; i < lines.length; i++) {
+      var vals = lines[i].split(',');
+      var obj = {};
+      headers.forEach(function(h, idx) { obj[h] = (vals[idx]||'').replace(/^"|"$/g,'').trim(); });
+      if (obj['Destinatário'] || obj['destinatario']) dados.push(obj);
+    }
+    var existente = getArquivo();
+    var ids = new Set(existente.map(function(d){ return d['ID']||d['id']; }));
+    var novos = dados.filter(function(d){ return !ids.has(d['ID']||d['id']); });
+    var total = existente.concat(novos);
+    salvarArquivo(total);
+    document.getElementById('arquivoStatus').textContent = '✅ ' + total.length + ' encomendas (' + novos.length + ' novas)';
+    document.getElementById('arquivoStatus').style.color = 'var(--accent2)';
+    showToast('✅ ' + novos.length + ' encomendas importadas!');
+    renderArquivo();
+  };
+  reader.readAsText(file, 'UTF-8');
+}
+
+var _arqDebounce = null;
+function debounceArquivo() { clearTimeout(_arqDebounce); _arqDebounce = setTimeout(renderArquivo, 400); }
+
+function renderArquivo() {
+  var el = document.getElementById('arquivoResultados');
+  if (!el) return;
+  var dados = getArquivo();
+  var statusEl = document.getElementById('arquivoStatus');
+  if (statusEl && dados.length > 0) { statusEl.textContent = '📦 ' + dados.length + ' encomendas no arquivo local'; statusEl.style.color = 'var(--text2)'; }
+
+  var search = (document.getElementById('arquivoSearch').value || '').toLowerCase().trim();
+  var dateFrom = document.getElementById('arquivoDateFrom').value;
+  var dateTo = document.getElementById('arquivoDateTo').value;
+
+  if (!search && !dateFrom && !dateTo) {
+    el.innerHTML = '<div class="empty"><div class="empty-icon">🗄️</div><h3>Histórico arquivado</h3><p>Importe um CSV de backup e pesquise por nome, rastreio ou data</p></div>';
+    return;
+  }
+
+  var filtrados = dados.filter(function(d) {
+    var nome = (d['Destinatário']||d['destinatario']||'').toLowerCase();
+    var rastreio = (d['Rastreio']||d['rastreio']||'').toLowerCase();
+    var transp = (d['Transportadora']||d['transportadora']||'').toLowerCase();
+    var sala = (d['Sala']||d['sala']||'').toLowerCase();
+    var chegada = d['Chegada']||d['chegada']||'';
+    var ok = !search || nome.includes(search) || rastreio.includes(search) || transp.includes(search) || sala.includes(search);
+    var okFrom = !dateFrom || chegada >= dateFrom;
+    var okTo = !dateTo || chegada <= dateTo + 'T23:59:59';
+    return ok && okFrom && okTo;
+  });
+
+  if (!filtrados.length) { el.innerHTML = '<div class="empty"><div class="empty-icon">🔍</div><h3>Nenhum resultado</h3><p>Tente outros termos ou datas</p></div>'; return; }
+
+  var html = '<div style="font-size:12px;color:var(--text2);margin-bottom:10px">' + filtrados.length + ' resultado(s)</div>';
+  filtrados.slice(0,50).forEach(function(d) {
+    var nome = d['Destinatário']||d['destinatario']||'—';
+    var sala = d['Sala']||d['sala']||'—';
+    var transp = d['Transportadora']||d['transportadora']||'—';
+    var rastreio = d['Rastreio']||d['rastreio']||'—';
+    var status = d['Status']||d['status']||'—';
+    var chegada = d['Chegada']||d['chegada']||'';
+    var entregue = d['Entregue']||d['entregue']||'';
+    var retiradoPor = d['Retirado Por']||d['retiradoPor']||'';
+    var dataChegada = chegada ? new Date(chegada).toLocaleDateString('pt-BR') : '—';
+    var dataEntrega = entregue ? new Date(entregue).toLocaleDateString('pt-BR') : '—';
+    var corStatus = status==='Entregue' ? 'var(--accent2)' : 'var(--accent)';
+    html += '<div style="background:var(--surface);border-radius:12px;padding:14px;margin-bottom:8px;border:1px solid var(--border)">';
+    html += '<div style="display:flex;justify-content:space-between;margin-bottom:6px"><span style="font-weight:700">' + nome + '</span><span style="font-size:11px;padding:3px 8px;border-radius:20px;background:var(--surface3);color:' + corStatus + '">' + status + '</span></div>';
+    html += '<div style="font-size:12px;color:var(--text2);display:flex;flex-wrap:wrap;gap:8px">';
+    html += '<span>🏠 ' + sala + '</span><span>📦 ' + transp + '</span><span>📅 ' + dataChegada + '</span>';
+    if (entregue) html += '<span>✅ ' + dataEntrega + '</span>';
+    if (retiradoPor) html += '<span>👤 ' + retiradoPor + '</span>';
+    html += '</div>';
+    if (rastreio && rastreio !== '(sem rastreio)') html += '<div style="font-size:11px;color:var(--text3);margin-top:4px;font-family:monospace">' + rastreio + '</div>';
+    html += '</div>';
+  });
+  if (filtrados.length > 50) html += '<div style="text-align:center;font-size:12px;color:var(--text2);padding:12px">Mostrando 50 de ' + filtrados.length + '. Refine a busca.</div>';
+  el.innerHTML = html;
 }
 
 // =====================
