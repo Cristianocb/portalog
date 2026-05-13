@@ -1262,12 +1262,19 @@ function showToast(msg, type = 'success') {
 function showScreen(name) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
   document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('screen-' + name).classList.add('active');
-  document.getElementById('nav-' + name).classList.add('active');
+  var sc = document.getElementById('screen-' + name);
+  if (sc) sc.classList.add('active');
+  var nb = document.getElementById('nav-' + name);
+  if (nb) nb.classList.add('active');
 
   if (name === 'stock') renderStock();
-  if (name === 'history') { buildMonthFilters(); renderHistory(); }
-  if (name === 'register') updateDateTimeDisplay();
+  else if (name === 'history') { buildMonthFilters(); renderHistory(); }
+  else if (name === 'register') updateDateTimeDisplay();
+  else if (name === 'copies-out') renderCopiesOut();
+  else if (name === 'busca') renderGlobalSearch();
+  else if (name === 'logs') renderLogs();
+  else if (name === 'arquivo') renderArquivo();
+  if (name !== 'copies-out') { selCopies.clear(); updateSendBar(); }
   updateStats();
 }
 
@@ -1970,20 +1977,7 @@ let selCopies = new Set();
 
 
 const _origShowScreen = showScreen;
-function showScreen(name) {
-  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  const screen = document.getElementById('screen-' + name);
-  if (screen) screen.classList.add('active');
-  const nb = document.getElementById('nav-' + name);
-  if (nb) nb.classList.add('active');
-  if (name !== 'copies-out') { selCopies.clear(); updateSendBar(); }
-  if (name === 'copies-out') renderCopiesOut();
-  else if (name === 'stock') renderStock();
-  else if (name === 'history') { buildMonthFilters(); renderHistory(); }
-  else if (name === 'register') updateDateTimeDisplay();
-  updateStats();
-}
+// showScreen já definida acima — removida duplicata
 
 // =====================
 // QUANTITY
