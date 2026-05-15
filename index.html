@@ -1050,14 +1050,7 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.firestore();
 const COLLECTION = 'encomendas';
 
-// Cache local persistente — reduz leituras repetidas drasticamente
-db.enablePersistence().catch(function(err) {
-  if (err.code === 'failed-precondition') {
-    console.warn('Persistência não disponível: múltiplas abas abertas');
-  } else if (err.code === 'unimplemented') {
-    console.warn('Persistência não suportada neste navegador');
-  }
-});
+// Persistência desativada — evita leituras excessivas
 
 // Data de corte: só carrega últimos 60 dias no início
 function getCutoffDate() {
